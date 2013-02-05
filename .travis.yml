@@ -31,3 +31,8 @@ script: "./configure && make"
 
 # after build script, run make install
 after_success: sudo make install
+
+# add notification email addresses
+notifications:
+  email:
+    - cmujedi@west.cmu.edu
