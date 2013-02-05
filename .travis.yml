@@ -35,5 +35,6 @@ after_success: sudo make install
 
 # add notification email addresses
 notifications:
-  email:
-    - cmujedi@west.cmu.edu
+  email:
+    recipients:
+      - cmujedi@west.cmu.edu
