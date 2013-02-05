@@ -3,10 +3,10 @@ language: c
 compiler: gcc
 
 # only build branches on whitelist
-branches:
-  only:
-    - setup-ci
-    - master
+#branches:
+#  only:
+#    - setup-ci
+#    - master
 
 # install all vnc-related dependencies
 before_install:
