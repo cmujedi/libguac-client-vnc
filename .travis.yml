@@ -1,3 +1,11 @@
+# Set environment variables
+env:
+  global:
+    - secure: "eNufz0915oMHd4cNbvo+YysNgJSP3IFrsWPFkVtg2S/L3hCv9+sTto/yuX00\nHvaJ1lcvak2DkiQmslJubcjpGNOysjp6rjhY92YodZs+wZwsrevjoanj9qWH\nwHz2eM1N6fvebMmzNS9fwwFmY3DiCDwBoTssz8aLs0etg+2xVBw="
+
+  matrix: 
+    - secure: "eNufz0915oMHd4cNbvo+YysNgJSP3IFrsWPFkVtg2S/L3hCv9+sTto/yuX00\nHvaJ1lcvak2DkiQmslJubcjpGNOysjp6rjhY92YodZs+wZwsrevjoanj9qWH\nwHz2eM1N6fvebMmzNS9fwwFmY3DiCDwBoTssz8aLs0etg+2xVBw="
+
 # use c and gcc
 language: c
 compiler: gcc
@@ -31,10 +39,20 @@ before_script: autoreconf -i
 script: "./configure && make"
 
 # after build script, run make install
-after_success: sudo make install
+after_success: 
+  - sudo make install
+  - curl -s -o output.txt $IRC_TREELOGIC_CHANNEL_TOKEN -d "service=TravisCI" -d "message=$TRAVIS_REPO_SLUG $TRAVIS_BUILD_NUMBER ( $TRAVIS_BRANCH - $TRAVIS_COMMIT ) - Passed" -d "url=https://grove.io/app" -d "icon_url=https://secure.travis-ci.org/$TRAVIS_REPO_SLUG.png"
+
+
+# after build script, run make install
+after_failure: 
+   - curl -s -o output.txt $IRC_TREELOGIC_CHANNEL_TOKEN -d "service=TravisCI" -d "message=$TRAVIS_REPO_SLUG $TRAVIS_BUILD_NUMBER ( $TRAVIS_BRANCH - $TRAVIS_COMMIT ) - Failed" -d "url=https://grove.io/app" -d "icon_url=https://secure.travis-ci.org/$TRAVIS_REPO_SLUG.png"
 
 # add notification email addresses
 notifications:
   email:
     recipients:
       - cmujedi@west.cmu.edu
+  webhooks:
+    - secure: "eNufz0915oMHd4cNbvo+YysNgJSP3IFrsWPFkVtg2S/L3hCv9+sTto/yuX00\nHvaJ1lcvak2DkiQmslJubcjpGNOysjp6rjhY92YodZs+wZwsrevjoanj9qWH\nwHz2eM1N6fvebMmzNS9fwwFmY3DiCDwBoTssz8aLs0etg+2xVBw="
+
