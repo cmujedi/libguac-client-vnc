@@ -12,7 +12,7 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is libguac-client-vnc.
+ * The Original Code is libguac-client-rdp.
  *
  * The Initial Developer of the Original Code is
  * Michael Jumper.
@@ -35,36 +35,33 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __GUAC_VNC_CLIENT_H
-#define __GUAC_VNC_CLIENT_H
+#ifndef __GUAC_OGG_ENCODER_H
+#define __GUAC_OGG_ENCODER_H
 
-#include <rfb/rfbclient.h>
+#include "audio.h"
 
-extern char* __GUAC_CLIENT;
+#include <vorbis/vorbisenc.h>
 
-typedef struct vnc_guac_client_data {
-    
-    rfbClient* rfb_client;
-    MallocFrameBufferProc rfb_MallocFrameBuffer;
+typedef struct ogg_encoder_state {
 
-    int copy_rect_used;
-    char* password;
-    char* encodings;
-    int swap_red_blue;
-
-    guac_layer* cursor;
-    
     /**
-     * Whether audio is enabled.
+     * Ogg state
      */
-    int audio_enabled;
-    
-    /**
-     * Audio output, if any.
-     */
-    audio_stream* audio;
+    ogg_stream_state ogg_state;
+    ogg_page ogg_page;
+    ogg_packet ogg_packet;
 
-} vnc_guac_client_data;
+    /**
+     * Vorbis state
+     */
+    vorbis_info info;
+    vorbis_comment comment;
+    vorbis_dsp_state vorbis_state;
+    vorbis_block vorbis_block;
+
+} ogg_encoder_state;
+
+extern audio_encoder* ogg_encoder;
 
 #endif
 
