@@ -1,4 +1,4 @@
-
+ 
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -44,9 +44,17 @@
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
+#include "audio.h"
+#include "wav_encoder.h"
+#ifdef ENABLE_OGG
+#include "ogg_encoder.h"
+#endif
+
 #include "client.h"
 #include "vnc_handlers.h"
 #include "guac_handlers.h"
+
+
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -70,6 +78,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     vnc_guac_client_data* guac_client_data;
 
     int read_only;
+    int i;
 
     /* Set up libvncclient logging */
     rfbClientLog = guac_vnc_client_log_info;
@@ -132,7 +141,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
        /* Choose an encoding */
        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
 
+           /*
            const char* mimetype = client->info.audio_mimetypes[i];
+		   */
 
 #ifdef ENABLE_OGG
            /* If Ogg is supported, done. */
@@ -145,12 +156,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 #endif
 
            /* If wav is supported, done. */
+           /**
            if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
                guac_client_log_info(client, "Loading wav encoder.");
                guac_client_data->audio = audio_stream_alloc(client,
                        wav_encoder);
                break;
-           }
+           }**/
 
        }
 

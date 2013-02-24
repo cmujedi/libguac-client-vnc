@@ -38,7 +38,11 @@
 #ifndef __GUAC_VNC_CLIENT_H
 #define __GUAC_VNC_CLIENT_H
 
+#include <guacamole/client.h>
 #include <rfb/rfbclient.h>
+#include "audio.h"
+
+
 
 extern char* __GUAC_CLIENT;
 
