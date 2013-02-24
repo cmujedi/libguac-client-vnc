@@ -67,6 +67,12 @@ typedef struct vnc_guac_client_data {
      * Audio output, if any.
      */
     audio_stream* audio;
+    
+    /**
+     * Lock which is locked and unlocked for each update.
+     */
+    pthread_mutex_t update_lock;
+
 
 } vnc_guac_client_data;
 

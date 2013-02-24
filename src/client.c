@@ -141,9 +141,9 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
        /* Choose an encoding */
        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
 
-           /*
+           
            const char* mimetype = client->info.audio_mimetypes[i];
-		   */
+		   
 
 #ifdef ENABLE_OGG
            /* If Ogg is supported, done. */
@@ -156,13 +156,13 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 #endif
 
            /* If wav is supported, done. */
-           /**
+           
            if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
                guac_client_log_info(client, "Loading wav encoder.");
                guac_client_data->audio = audio_stream_alloc(client,
                        wav_encoder);
                break;
-           }**/
+           }
 
        }
 

@@ -88,7 +88,7 @@ void audio_stream_end(audio_stream* audio) {
 
     double duration;
 
-    rdp_guac_client_data* data = (rdp_guac_client_data*) audio->client->data;
+    vnc_guac_client_data* data = (vnc_guac_client_data*) audio->client->data;
 
     /* Flush stream and finish encoding */
     audio_stream_flush(audio);
