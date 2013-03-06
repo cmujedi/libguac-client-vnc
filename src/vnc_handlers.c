@@ -333,3 +333,23 @@ void guac_vnc_client_log_error(const char* format, ...) {
 
 }
 
+// void guac_pa_write_audio(audio_stream* audio, unsigned char* data, int length) {
+
+//     /* Copy audio data from Pulse Audio client to Audio buffer */
+//     int rate        = 44100;
+//     int channels    = 2;
+//     int bps         = 16;
+
+//     /* Init stream with requested format */
+//     audio_stream_begin(audio, rate, channels, bps);
+
+//     /* Write initial 4 bytes of data */
+//     audio_stream_write_pcm(audio, data, 4);
+
+//     /* Write pcm data to the audio stream buff */
+//     audio_stream_write_pcm(audio, data, length);
+
+//     /* Flush encoded stream to guacamole */
+//     audio_stream_end(audio);
+
+// }
