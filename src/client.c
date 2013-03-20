@@ -37,6 +37,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+#include <errno.h>
 
 #include <rfb/rfbclient.h>
 
@@ -54,7 +56,11 @@
 #include "vnc_handlers.h"
 #include "guac_handlers.h"
 
+#include <pulse/simple.h>
+#include <pulse/error.h>
+#include <pulse/introspect.h>
 
+#define BUFSIZE 1024
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -132,18 +138,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     /* Depth */
     guac_vnc_set_pixel_format(rfb_client, atoi(argv[6]));
 
-	guac_client_data->audio_enabled = 
-		(strcmp(argv[7], "true") != 0);
-	
+    guac_client_data->audio_enabled = (strcmp(argv[7], "true") != 0);
+    
+    printf("Audio created");
+    
    /* If audio enabled, choose an encoder */
-   if (guac_client_data->audio_enabled) {
+   if (guac_client_data->audio_enabled) {       
 
        /* Choose an encoding */
        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
 
-           
            const char* mimetype = client->info.audio_mimetypes[i];
-		   
 
 #ifdef ENABLE_OGG
            /* If Ogg is supported, done. */
@@ -156,36 +161,44 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 #endif
 
            /* If wav is supported, done. */
-           
            if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
                guac_client_log_info(client, "Loading wav encoder.");
                guac_client_data->audio = audio_stream_alloc(client,
                        wav_encoder);
                break;
            }
-
        }
 
        /* If an encoding is available, load the sound plugin */
        if (guac_client_data->audio != NULL) {
 
+           printf("Encoding available");
+           
            /* Load sound plugin
            if (freerdp_channels_load_plugin(channels, instance->settings,
                        "guac_rdpsnd", guac_client_data->audio))
                guac_client_log_error(client,
                        "Failed to load guac_rdpsnd plugin."); */
-
-           /* Write to the File here for now */
            
+           pthread_t pa_thread;
+           audio_stream* audio = guac_client_data->audio;
+           pa_thread_args* pa_args = malloc(sizeof(pa_thread_args*));
+           pa_args->client = client;
+           pa_args->audio  = audio;
 
+           /* Create a plugin instead of the thread */
+           if (pthread_create(&pa_thread, NULL, guac_client_pa_thread, (void*) pa_args)) {
+               printf("Thread created");
+               guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
+               guac_socket_flush(client->socket);
+               return 1;
+           }
        }
        else
            guac_client_log_info(client,
                    "No available audio encoding. Sound disabled.");
 
    } /* end if audio enabled */
-   
-	
 
     /* Hook into allocation so we can handle resize. */
     guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;
@@ -234,4 +247,85 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     return 0;
 
 }
+
+void* guac_client_pa_thread(void* data) {
+    pa_thread_args* args = (pa_thread_args*) data;
+    guac_client* client = args->client;
+    audio_stream* audio = args->audio;
+
+    /***** We Stopped Here *****/
+
+    /**** TODO: ****/
+    static const pa_sample_spec ss = {
+        .format = PA_SAMPLE_S16LE,
+        .rate = 44100,
+        .channels = 2
+    };
+
+    pa_simple *s_in = NULL;
+    int error;
+
+    /* This is a command to get the name of the default source
+    which should look like the following:
+    alsa_output.pci-0000_00_05.0.analog-stereo.monitor
+    */
+
+    FILE *fp;
+    char *command = "pactl list | grep -A2 'Source #' | grep 'Name: .*\\.monitor$' | cut -d\" \" -f2";
+    char output[100];
+
+    fp = popen(command,"r");
+
+    /* read output from command */
+    int result = fscanf(fp,"%s",output);
+    if (result == EOF)
+        goto finish;
+
+    fclose(fp);
+
+    char *device = output;
+
+    /* Create a new playback stream */
+    if (!(s_in = pa_simple_new(NULL, "Record from sound card", PA_STREAM_RECORD, device, "record", &ss, NULL, NULL, &error))) {
+        fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+        goto finish;
+    }
+
+    while (client->state == GUAC_CLIENT_RUNNING) {
+        uint8_t buf[BUFSIZE];
+        pa_usec_t latency;
+
+        if ((latency = pa_simple_get_latency(s_in, &error)) == (pa_usec_t) -1) {
+            fprintf(stderr, __FILE__": pa_simple_get_latency() failed: %s\n", pa_strerror(error));
+            goto finish;
+        }
+
+        if (pa_simple_read(s_in, buf, sizeof(buf), &error) < 0) {
+            fprintf(stderr, __FILE__": read() failed: %s\n", strerror(errno));
+            goto finish;
+        }
+        
+        /* Init stream with requested format */
+        audio_stream_begin(audio, 44100, 2, 16);
+
+        /* Write initial 4 bytes of data */
+        audio_stream_write_pcm(audio, buf, 4);
+
+        /* Write pcm data to the audio stream buff */
+        audio_stream_write_pcm(audio, buf, BUFSIZE);
+
+        /* Flush encoded stream to guacamole */
+        audio_stream_end(audio);
+        
+    }
+
+finish:
+
+    if (s_in)
+        pa_simple_free(s_in);
+
+    return NULL;
+}
+
+
 

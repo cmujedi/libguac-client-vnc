@@ -76,5 +76,21 @@ typedef struct vnc_guac_client_data {
 
 } vnc_guac_client_data;
 
+typedef struct pa_thread_args {
+
+    /**
+    * Guac client
+    */
+    guac_client* client;
+
+    /**
+    * Audio stream
+    */
+    audio_stream* audio;
+    
+} pa_thread_args;
+
+void* guac_client_pa_thread(void* data);
+
 #endif
 
