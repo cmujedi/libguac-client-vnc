@@ -176,18 +176,26 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                guac_client_log_error(client,
                        "Failed to load guac_rdpsnd plugin."); */
            
-           pthread_t pa_thread;
-           audio_stream* audio = guac_client_data->audio;
-           pa_thread_args* pa_args = malloc(sizeof(pa_thread_args*));
-           pa_args->client = client;
-           pa_args->audio  = audio;
-
+           pthread_t pa_read_thread;
+           
            /* Create a plugin instead of the thread */
-           if (pthread_create(&pa_thread, NULL, guac_client_pa_thread, (void*) pa_args)) {
+           if (pthread_create(&pa_read_thread, NULL, guac_client_pa_read_thread, (void*) client)) {
                guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
                guac_socket_flush(client->socket);
                return 1;
            }
+           
+           pthread_t pa_write_thread;
+           pa_thread_args* pa_args = malloc(sizeof(pa_thread_args*));
+           pa_args->client = client;
+           pa_args->audio  = guac_client_data->audio;
+           
+           /* Create a plugin instead of the thread */
+           if (pthread_create(&pa_write_thread, NULL, guac_client_pa_write_thread, (void*) pa_args)) {
+               guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
+               guac_socket_flush(client->socket);
+               return 1;
+            }
        }
        else
            guac_client_log_info(client,
@@ -243,13 +251,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
 }
 
-void* guac_client_pa_thread(void* data) {
-     
-    pa_thread_args* args = (pa_thread_args*) data;
-    guac_client* client = args->client;
-    /*audio_stream* audio = args->audio;*/
+void* guac_client_pa_read_thread(void* data) {
+    guac_client* client = (guac_client*) data;
     
-    guac_client_log_info(client, "Starting Pulse Audio thread...");
+    guac_client_log_info(client, "Starting Pulse Audio read thread...");
     
     pa_simple* s_in = NULL;
     int error;
@@ -285,20 +290,58 @@ void* guac_client_pa_thread(void* data) {
             goto finish;
         }
 
+        //pthread_mutex_lock(&(data->update_lock));
+
         if (pa_simple_read(s_in, buf, sizeof(buf), &error) < 0) {
             guac_client_log_info(client, "Failed to read audio buffer using pa_simple_read(): %s\n", pa_strerror(error));
             goto finish;
-        }          
+        }
+        
+        //pthread_mutex_unlock(&(data->update_lock));
     }
 
 finish:
     if (s_in)
         pa_simple_free(s_in);
 
-    guac_client_log_info(client, "Stopping Pulse Audio thread...");
+    guac_client_log_info(client, "Stopping Pulse Audio read thread...");
 
     return NULL;
 }
+
+void* guac_client_pa_write_thread(void* data) {
+     
+    pa_thread_args* args = (pa_thread_args*) data;
+    guac_client* client = args->client;
+    // audio_stream* audio = args->audio;
+    
+    guac_client_log_info(client, "Starting Pulse Audio write thread...");
+
+    while (client->state == GUAC_CLIENT_RUNNING) {
+        
+        // /* Init stream with requested format */
+        //         audio_stream_begin(audio, 44100, 2, 16);
+        //         
+        //         /* Write initial 4 bytes of data */
+        //         audio_stream_write_pcm(audio, buf, 4);
+        //         
+        //         /* Write pcm data to the audio stream buff */
+        //         audio_stream_write_pcm(audio, buf, BUFSIZE);
+        //        
+        //         /* Flush encoded stream to guacamole */
+        //         audio_stream_end(audio);
+        //         
+        //         guac_client_log_info(client, "Sending audio data");
+        //         
+        
+        sleep(10);               
+    }
+  
+    guac_client_log_info(client, "Stopping Pulse Audio write thread...");
+
+    return NULL;
+}
+
 
 void guac_pa_get_audio_source(char* device) {
     
