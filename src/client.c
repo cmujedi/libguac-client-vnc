@@ -140,8 +140,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
     guac_client_data->audio_enabled = (strcmp(argv[7], "true") != 0);
     
-    printf("Audio created");
-    
    /* If audio enabled, choose an encoder */
    if (guac_client_data->audio_enabled) {       
 
@@ -171,8 +169,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
        /* If an encoding is available, load the sound plugin */
        if (guac_client_data->audio != NULL) {
-
-           printf("Encoding available");
            
            /* Load sound plugin
            if (freerdp_channels_load_plugin(channels, instance->settings,
@@ -188,7 +184,6 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 
            /* Create a plugin instead of the thread */
            if (pthread_create(&pa_thread, NULL, guac_client_pa_thread, (void*) pa_args)) {
-               printf("Thread created");
                guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
                guac_socket_flush(client->socket);
                return 1;
@@ -249,45 +244,35 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
 }
 
 void* guac_client_pa_thread(void* data) {
+     
     pa_thread_args* args = (pa_thread_args*) data;
     guac_client* client = args->client;
-    audio_stream* audio = args->audio;
-
-    /***** We Stopped Here *****/
-
+    /*audio_stream* audio = args->audio;*/
+    
+    guac_client_log_info(client, "Starting Pulse Audio thread...");
+    
+    pa_simple* s_in = NULL;
+    int error;
+    
+    char* device = malloc(sizeof(char) * 100);
+    guac_pa_get_audio_source(device);
+    if (!device) {
+       guac_client_log_info(client, "Failed to get audio source");
+       goto finish; 
+    }  
+    
+    guac_client_log_info(client, "Using default audio source: %s\n", device);
+    
     /**** TODO: ****/
     static const pa_sample_spec ss = {
-        .format = PA_SAMPLE_S16LE,
-        .rate = 44100,
-        .channels = 2
-    };
-
-    pa_simple *s_in = NULL;
-    int error;
-
-    /* This is a command to get the name of the default source
-    which should look like the following:
-    alsa_output.pci-0000_00_05.0.analog-stereo.monitor
-    */
-
-    FILE *fp;
-    char *command = "pactl list | grep -A2 'Source #' | grep 'Name: .*\\.monitor$' | cut -d\" \" -f2";
-    char output[100];
-
-    fp = popen(command,"r");
-
-    /* read output from command */
-    int result = fscanf(fp,"%s",output);
-    if (result == EOF)
-        goto finish;
-
-    fclose(fp);
-
-    char *device = output;
-
-    /* Create a new playback stream */
+              .format = PA_SAMPLE_S16LE,
+              .rate = 44100,
+              .channels = 2
+          };
+    
+    /* Create a new record stream */
     if (!(s_in = pa_simple_new(NULL, "Record from sound card", PA_STREAM_RECORD, device, "record", &ss, NULL, NULL, &error))) {
-        fprintf(stderr, __FILE__": pa_simple_new() failed: %s\n", pa_strerror(error));
+        guac_client_log_info(client, "Failed to create record stream using pa_simple_new(): %s\n", pa_strerror(error));
         goto finish;
     }
 
@@ -296,35 +281,42 @@ void* guac_client_pa_thread(void* data) {
         pa_usec_t latency;
 
         if ((latency = pa_simple_get_latency(s_in, &error)) == (pa_usec_t) -1) {
-            fprintf(stderr, __FILE__": pa_simple_get_latency() failed: %s\n", pa_strerror(error));
+            guac_client_log_info(client, "Failed to get latency using pa_simple_get_latency(): %s\n", pa_strerror(error));
             goto finish;
         }
 
         if (pa_simple_read(s_in, buf, sizeof(buf), &error) < 0) {
-            fprintf(stderr, __FILE__": read() failed: %s\n", strerror(errno));
+            guac_client_log_info(client, "Failed to read audio buffer using pa_simple_read(): %s\n", pa_strerror(error));
             goto finish;
-        }
-        
-        /* Init stream with requested format */
-        audio_stream_begin(audio, 44100, 2, 16);
-
-        /* Write initial 4 bytes of data */
-        audio_stream_write_pcm(audio, buf, 4);
-
-        /* Write pcm data to the audio stream buff */
-        audio_stream_write_pcm(audio, buf, BUFSIZE);
-
-        /* Flush encoded stream to guacamole */
-        audio_stream_end(audio);
-        
+        }          
     }
 
 finish:
-
     if (s_in)
         pa_simple_free(s_in);
 
+    guac_client_log_info(client, "Stopping Pulse Audio thread...");
+
     return NULL;
+}
+
+void guac_pa_get_audio_source(char* device) {
+    
+    /* This is a command to get the name of the default source
+    which should look like the following:
+    alsa_output.pci-0000_00_05.0.analog-stereo.monitor
+    */
+    FILE* fp;
+    char* command = "pactl list | grep -A2 'Source #' | grep 'Name: .*\\.monitor$' | cut -d\" \" -f2";
+
+    fp = popen(command, "r");
+    
+    /* read output from command */ 
+    int result = fscanf(fp, "%s", device);
+    if (result == EOF)
+        return;
+
+    fclose(fp);
 }
 
 

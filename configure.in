@@ -45,6 +45,9 @@ AC_PROG_LIBTOOL
 # Checks for libraries.
 AC_CHECK_LIB([guac], [guac_client_plugin_open],, AC_MSG_ERROR("libguac must be installed first"))
 AC_CHECK_LIB([cairo], [cairo_create],, AC_MSG_ERROR("cairo is required for drawing instructions"))
+
+# Check if PulseAudio  is available
+AC_CHECK_LIB([pulse-simple], [pa_simple_new],, AC_MSG_ERROR("pulse audio must be installed"))
 AC_CHECK_LIB([vncclient], [rfbInitClient],, AC_MSG_ERROR("libvncclient is required"))
 
 # Check for libvorbisenc

@@ -92,5 +92,7 @@ typedef struct pa_thread_args {
 
 void* guac_client_pa_thread(void* data);
 
+void guac_pa_get_audio_source(char* device);
+
 #endif
 
