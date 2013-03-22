@@ -32,6 +32,7 @@ before_install:
   - sudo apt-get install libvncserver-dev
   - sudo apt-get install libfreerdp1
   - sudo apt-get install libvorbisenc2
+  - sudo apt-get install libpulse-dev
 
 # before build script, run autoreconf
 before_script: autoreconf -i
