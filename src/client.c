@@ -77,6 +77,11 @@ const char* GUAC_CLIENT_ARGS[] = {
 
 char* __GUAC_CLIENT = "GUAC_CLIENT";
 
+// ------ TODO -----------
+// audio_buffer and audio_buffer_lock should not be global variables
+unsigned char* audio_buffer;
+pthread_mutex_t audio_buffer_lock;
+
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
     rfbClient* rfb_client;
@@ -175,7 +180,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
                        "guac_rdpsnd", guac_client_data->audio))
                guac_client_log_error(client,
                        "Failed to load guac_rdpsnd plugin."); */
-           
+            
+           // audio_buffer is the data structure that is shared by both read and write threads
+           // ----- TODO -----
+           // Put a lock around the shared data structure
+           audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE);
            pthread_t pa_read_thread;
            
            /* Create a plugin instead of the thread */
@@ -290,14 +299,16 @@ void* guac_client_pa_read_thread(void* data) {
             goto finish;
         }
 
-        //pthread_mutex_lock(&(data->update_lock));
-
         if (pa_simple_read(s_in, buf, sizeof(buf), &error) < 0) {
             guac_client_log_info(client, "Failed to read audio buffer using pa_simple_read(): %s\n", pa_strerror(error));
             goto finish;
         }
         
-        //pthread_mutex_unlock(&(data->update_lock));
+        // pthread_mutex_lock(&(audio_buffer_lock));
+        // 
+        // memcpy(audio_buffer, buf, sizeof(buf));
+        // 
+        // pthread_mutex_unlock(&(audio_buffer_lock));
     }
 
 finish:
@@ -319,20 +330,23 @@ void* guac_client_pa_write_thread(void* data) {
 
     while (client->state == GUAC_CLIENT_RUNNING) {
         
-        // /* Init stream with requested format */
-        //         audio_stream_begin(audio, 44100, 2, 16);
-        //         
-        //         /* Write initial 4 bytes of data */
-        //         audio_stream_write_pcm(audio, buf, 4);
-        //         
-        //         /* Write pcm data to the audio stream buff */
-        //         audio_stream_write_pcm(audio, buf, BUFSIZE);
+        /* Init stream with requested format */
+        // audio_stream_begin(audio, 44100, 2, 16);
+        // 
+        // pthread_mutex_lock(&(audio_buffer_lock));
+        // 
+        // /* Write initial 4 bytes of data */
+        // audio_stream_write_pcm(audio, audio_buffer, 4);
+        // 
+        // /* Write pcm data to the audio stream buff */
+        // audio_stream_write_pcm(audio, audio_buffer, BUFSIZE);
+        // 
+        // pthread_mutex_unlock(&(audio_buffer_lock));
         //        
-        //         /* Flush encoded stream to guacamole */
-        //         audio_stream_end(audio);
-        //         
-        //         guac_client_log_info(client, "Sending audio data");
-        //         
+        // /* Flush encoded stream to guacamole */
+        // audio_stream_end(audio);
+        
+        //guac_client_log_info(client, "Sending audio data");                     
         
         sleep(10);               
     }
