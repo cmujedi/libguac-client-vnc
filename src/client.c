@@ -39,6 +39,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <errno.h>
+#include <time.h>
 
 #include <rfb/rfbclient.h>
 
@@ -60,7 +61,7 @@
 #include <pulse/error.h>
 #include <pulse/introspect.h>
 
-#define BUFSIZE 1024
+#define BUFSIZE 512
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -304,11 +305,13 @@ void* guac_client_pa_read_thread(void* data) {
             goto finish;
         }
         
-        // pthread_mutex_lock(&(audio_buffer_lock));
-        // 
-        // memcpy(audio_buffer, buf, sizeof(buf));
-        // 
-        // pthread_mutex_unlock(&(audio_buffer_lock));
+        // guac_client_log_info(client, "audio buffer contains: %s", buf);
+
+        pthread_mutex_lock(&(audio_buffer_lock));
+        
+        memcpy(audio_buffer, buf, sizeof(buf));
+        
+        pthread_mutex_unlock(&(audio_buffer_lock));
     }
 
 finish:
@@ -320,35 +323,58 @@ finish:
     return NULL;
 }
 
+/**
+ * Sleep for the given number of milliseconds.
+ *
+ * @param millis The number of milliseconds to sleep.
+ */
+void tmp_sleep(int millis) {
+
+    struct timespec sleep_period;
+
+    sleep_period.tv_sec =   millis / 1000;
+    sleep_period.tv_nsec = (millis % 1000) * 1000000L;
+
+    nanosleep(&sleep_period, NULL);
+
+}
+
 void* guac_client_pa_write_thread(void* data) {
      
     pa_thread_args* args = (pa_thread_args*) data;
     guac_client* client = args->client;
-    // audio_stream* audio = args->audio;
+    audio_stream* audio = args->audio;
     
     guac_client_log_info(client, "Starting Pulse Audio write thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
         
+        // guac_client_log_info(client, "audio stream before encoding... %s", audio->pcm_data);
+
         /* Init stream with requested format */
-        // audio_stream_begin(audio, 44100, 2, 16);
-        // 
-        // pthread_mutex_lock(&(audio_buffer_lock));
-        // 
-        // /* Write initial 4 bytes of data */
-        // audio_stream_write_pcm(audio, audio_buffer, 4);
-        // 
-        // /* Write pcm data to the audio stream buff */
-        // audio_stream_write_pcm(audio, audio_buffer, BUFSIZE);
-        // 
-        // pthread_mutex_unlock(&(audio_buffer_lock));
-        //        
-        // /* Flush encoded stream to guacamole */
-        // audio_stream_end(audio);
+        audio_stream_begin(audio, 44100, 2, 16);
+
+        // guac_client_log_info(client, "audio stream after stream_begin encoding... %s", audio->encoded_data);
         
+        pthread_mutex_lock(&(audio_buffer_lock));
+        
+        /* Write initial 4 bytes of data */
+        audio_stream_write_pcm(audio, audio_buffer, 4);
+        
+        /* Write pcm data to the audio stream buff */
+        audio_stream_write_pcm(audio, audio_buffer, BUFSIZE);
+        
+        pthread_mutex_unlock(&(audio_buffer_lock));
+               
+        /* Flush encoded stream to guacamole */
+        audio_stream_end(audio);
+        
+        // guac_client_log_info(client, "audio stream after stream_end encoding... %s", audio->encoded_data);
+
+
         //guac_client_log_info(client, "Sending audio data");                     
         
-        sleep(10);               
+        tmp_sleep(400);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");
