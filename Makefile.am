@@ -49,8 +49,9 @@ libguac_client_vnc_la_SOURCES = \
 	src/client.c 			\
 	src/vnc_handlers.c 		\
 	src/guac_handlers.c 	\
-	src/wav_encoder.c
-	
+	src/wav_encoder.c		\
+	src/queue.c				\
+	src/buffer.c
 	
 noinst_HEADERS = 				\
 	$(OGG_HEADERS)			\
@@ -58,8 +59,9 @@ noinst_HEADERS = 				\
 	include/client.h 		\
 	include/vnc_handlers.h 	\
 	include/guac_handlers.h	\
-	include/wav_encoder.h
-	
+	include/wav_encoder.h	\
+	include/queue.h		\
+	include/buffer.h
 
 libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0
 

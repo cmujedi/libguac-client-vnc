@@ -52,6 +52,7 @@
 #ifdef ENABLE_OGG
 #include "ogg_encoder.h"
 #endif
+#include "buffer.h"
 
 #include "client.h"
 #include "vnc_handlers.h"
@@ -61,7 +62,7 @@
 #include <pulse/error.h>
 #include <pulse/introspect.h>
 
-#define BUFSIZE 512
+#define BUFSIZE 1024
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -80,8 +81,9 @@ char* __GUAC_CLIENT = "GUAC_CLIENT";
 
 // ------ TODO -----------
 // audio_buffer and audio_buffer_lock should not be global variables
-unsigned char* audio_buffer;
-pthread_mutex_t audio_buffer_lock;
+//unsigned char* audio_buffer;
+//pthread_mutex_t audio_buffer_lock;
+buffer* audio_buffer;
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
@@ -185,7 +187,11 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
            // audio_buffer is the data structure that is shared by both read and write threads
            // ----- TODO -----
            // Put a lock around the shared data structure
-           audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE);
+           //audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE);
+           audio_buffer = malloc(sizeof(buffer));   
+           //init_buffer(audio_buffer, client);
+           guac_client_log_info(client, "I'm here!");
+           
            pthread_t pa_read_thread;
            
            /* Create a plugin instead of the thread */
@@ -307,11 +313,13 @@ void* guac_client_pa_read_thread(void* data) {
         
         // guac_client_log_info(client, "audio buffer contains: %s", buf);
 
-        pthread_mutex_lock(&(audio_buffer_lock));
+        // pthread_mutex_lock(&(audio_buffer_lock));
         
-        memcpy(audio_buffer, buf, sizeof(buf));
+        buffer_insert(audio_buffer, (void*) buf);
         
-        pthread_mutex_unlock(&(audio_buffer_lock));
+        // memcpy(audio_buffer, buf, sizeof(buf));
+        //        
+        //        pthread_mutex_unlock(&(audio_buffer_lock));
     }
 
 finish:
@@ -348,6 +356,9 @@ void* guac_client_pa_write_thread(void* data) {
     guac_client_log_info(client, "Starting Pulse Audio write thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
+        unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUFSIZE);
+        
+        buffer_remove(audio_buffer, (void *) buffer_data);
         
         // guac_client_log_info(client, "audio stream before encoding... %s", audio->pcm_data);
 
@@ -356,15 +367,15 @@ void* guac_client_pa_write_thread(void* data) {
 
         // guac_client_log_info(client, "audio stream after stream_begin encoding... %s", audio->encoded_data);
         
-        pthread_mutex_lock(&(audio_buffer_lock));
+        // pthread_mutex_lock(&(audio_buffer_lock));
         
         /* Write initial 4 bytes of data */
-        audio_stream_write_pcm(audio, audio_buffer, 4);
+        audio_stream_write_pcm(audio, buffer_data, 4);
         
         /* Write pcm data to the audio stream buff */
-        audio_stream_write_pcm(audio, audio_buffer, BUFSIZE);
+        audio_stream_write_pcm(audio, buffer_data, sizeof(buffer_data));
         
-        pthread_mutex_unlock(&(audio_buffer_lock));
+        // pthread_mutex_unlock(&(audio_buffer_lock));
                
         /* Flush encoded stream to guacamole */
         audio_stream_end(audio);
@@ -374,7 +385,7 @@ void* guac_client_pa_write_thread(void* data) {
 
         //guac_client_log_info(client, "Sending audio data");                     
         
-        tmp_sleep(400);              
+        tmp_sleep(500);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");

@@ -44,6 +44,7 @@
 
 #include "audio.h"
 #include "client.h"
+#include "buffer.h"
 
 audio_stream* audio_stream_alloc(guac_client* client, audio_encoder* encoder) {
 
