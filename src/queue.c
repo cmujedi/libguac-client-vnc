@@ -26,34 +26,37 @@ http://www.amazon.com/exec/obidos/ASIN/0387001638/thealgorithmrepo/
 
 */
 #include <stdlib.h>
+#include <string.h>
 #include "queue.h"
 
-void init_queue(queue* q) {   
+void init_queue(queue* q, int size_of_element) {   
     q->first = 0;
     q->last = QUEUESIZE-1;
     q->count = 0;
     
     int i;
     for(i = 0; i < QUEUESIZE; i++)
-        q->items[i] = malloc(sizeof(unsigned char) * 1024);
+        q->items[i] = malloc(size_of_element);
 }
 
-int enqueue(queue* q, void* data) {
+int enqueue(queue* q, void* data, int size) {
     if (q->count >= QUEUESIZE)
         return -1;
         
     q->last = (q->last+1) % QUEUESIZE;
-    q->items[ q->last ] = data;    
+    // q->items[ q->last ] = data; 
+    memcpy(q->items[ q->last ], data, size);   
     q->count = q->count + 1;
     
     return 0;
 }
 
-int dequeue(queue* q, void* data) {
+int dequeue(queue* q, void* data, int size) {
     if (q->count <= 0) 
         return -1;
         
-    data = q->items[ q->first ];
+    // data = q->items[ q->first ];
+    memcpy(data, q->items[ q->first ], size);  
     q->first = (q->first+1) % QUEUESIZE;
     q->count = q->count - 1;
 

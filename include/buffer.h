@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <guacamole/client.h>
 #include "queue.h"
 
 typedef struct {
@@ -7,8 +8,8 @@ typedef struct {
     pthread_cond_t cond;
 } buffer;
 
-void init_buffer(buffer* buf);
+void init_buffer(buffer* buf, int size_of_data);
 
-void buffer_insert(buffer* buf, void* data);
+void buffer_insert(buffer* buf, void* data, int size_of_data);
  
-void buffer_remove(buffer* buf, void* data);
+void buffer_remove(buffer* buf, void* data, int size_of_data, guac_client* client);

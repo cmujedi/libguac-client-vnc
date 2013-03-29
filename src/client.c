@@ -189,8 +189,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
            // Put a lock around the shared data structure
            //audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE);
            audio_buffer = malloc(sizeof(buffer));   
-           //init_buffer(audio_buffer, client);
-           guac_client_log_info(client, "I'm here!");
+           init_buffer(audio_buffer, sizeof(unsigned char) * 1024);
            
            pthread_t pa_read_thread;
            
@@ -315,7 +314,12 @@ void* guac_client_pa_read_thread(void* data) {
 
         // pthread_mutex_lock(&(audio_buffer_lock));
         
-        buffer_insert(audio_buffer, (void*) buf);
+        buffer_insert(audio_buffer, (void*) buf, sizeof(unsigned char) * 1024);
+
+        // if((audio_buffer->data_queue).count > 0) 
+        // guac_client_log_info(client, "the audio buffer count is: %d", (audio_buffer->data_queue).count);
+
+          // guac_client_log_info(client, "the audio buffer contains: %s", (audio_buffer->data_queue).items[(audio_buffer->data_queue).last]);
         
         // memcpy(audio_buffer, buf, sizeof(buf));
         //        
@@ -352,14 +356,31 @@ void* guac_client_pa_write_thread(void* data) {
     pa_thread_args* args = (pa_thread_args*) data;
     guac_client* client = args->client;
     audio_stream* audio = args->audio;
-    
+    unsigned char * other_audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE * 200);
+
     guac_client_log_info(client, "Starting Pulse Audio write thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
         unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUFSIZE);
-        
-        buffer_remove(audio_buffer, (void *) buffer_data);
-        
+        int counter = 0;
+
+        while (counter < 200) {
+          buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUFSIZE, client);
+          
+          // guac_client_log_info(client, "Writer counter is: %s", buffer_data);
+          
+          memcpy(other_audio_buffer, buffer_data, sizeof(buffer_data));
+          other_audio_buffer = other_audio_buffer + BUFSIZE;
+          counter++;
+        }
+        other_audio_buffer = other_audio_buffer - (200 * BUFSIZE);
+   
+        guac_client_log_info(client, "other audio buffer: %s", other_audio_buffer);
+
+
+
+        // guac_client_log_info(client, "audio buffer contains: %s", buffer_data);
+
         // guac_client_log_info(client, "audio stream before encoding... %s", audio->pcm_data);
 
         /* Init stream with requested format */
