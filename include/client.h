@@ -96,5 +96,7 @@ void* guac_client_pa_write_thread(void* data);
 
 void guac_pa_get_audio_source(char* device);
 
+int write_audio_data(unsigned char* buffer, int size, int count); 
+
 #endif
 

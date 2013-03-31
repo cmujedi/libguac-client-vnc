@@ -357,31 +357,36 @@ void* guac_client_pa_write_thread(void* data) {
     guac_client* client = args->client;
     audio_stream* audio = args->audio;
     //unsigned char * other_audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE * 200);
-    unsigned char other_audio_buffer[BUFSIZE * 200];
-
-
+    //unsigned char other_audio_buffer[BUFSIZE * 200];
+    
     guac_client_log_info(client, "Starting Pulse Audio write thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
         unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUFSIZE);
         int counter = 0;
-        int i;
+        //int i;
 
+        audio_stream_begin(audio, 44100, 2, 16);
+        
+        audio_stream_write_pcm(audio, buffer_data, 4);
+         
         while (counter < 200) {
 
-          i = 0;
+        //  i = 0;
 
           buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUFSIZE, client);
+          
+          //write_audio_data(buffer_data, sizeof(unsigned char), BUFSIZE);
           
           //guac_client_log_info(client, "Writer counter is: %s", buffer_data);
           
           //memcpy(other_audio_buffer, buffer_data, sizeof(buffer_data));
-          for (i = 0; i < BUFSIZE; i++){
-
-              other_audio_buffer[counter * i] = buffer_data[i]; 
-
-          }
+          //for (i = 0; i < BUFSIZE; i++) {
+         //      other_audio_buffer[counter * i] = buffer_data[i]; 
+          //}
           //strcpy(other_audio_buffer, buff)
+          
+          audio_stream_write_pcm(audio, buffer_data, BUFSIZE);
           
           //guac_client_log_info(client, "Writer counter is: %s", buffer_data);
           //while (i < BUFSIZE)
@@ -389,9 +394,15 @@ void* guac_client_pa_write_thread(void* data) {
             //other_audio_buffer = other_audio_buffer++;
   
           counter++;
+          
+          if (client->state != GUAC_CLIENT_RUNNING)
+              break;
         }
         
-        guac_client_log_info(client, "other_audio_buffer is: %s", other_audio_buffer);
+        audio_stream_end(audio);
+        
+        //int count = write_audio_data(other_audio_buffer, sizeof(unsigned char), BUFSIZE * 200);
+       // guac_client_log_info(client, "Number of bytes written: %d", count);
 
         //while( i > 0)
         //other_audio_buffer--;
@@ -407,7 +418,7 @@ void* guac_client_pa_write_thread(void* data) {
         // guac_client_log_info(client, "audio stream before encoding... %s", audio->pcm_data);
 
         /* Init stream with requested format */
-        audio_stream_begin(audio, 44100, 2, 16);
+        //audio_stream_begin(audio, 44100, 2, 16);
 
         // guac_client_log_info(client, "audio stream after stream_begin encoding... %s", audio->encoded_data);
         
@@ -415,10 +426,10 @@ void* guac_client_pa_write_thread(void* data) {
         
         /* Write initial 4 bytes of data */
         
-        audio_stream_write_pcm(audio, other_audio_buffer, 4);
+        //audio_stream_write_pcm(audio, other_audio_buffer, 4);
         
         /* Write pcm data to the audio stream buff */
-        audio_stream_write_pcm(audio, other_audio_buffer, 200 * BUFSIZE);
+        //audio_stream_write_pcm(audio, other_audio_buffer, 200 * BUFSIZE);
 
         //guac_client_log_info(client, "pcm data... %s", audio->pcm_data);
 
@@ -427,7 +438,7 @@ void* guac_client_pa_write_thread(void* data) {
                
         /* Flush encoded stream to guacamole */
         //guac_client_log_info(client, "encoded data... %s", audio->encoded_data);
-        audio_stream_end(audio);
+        //audio_stream_end(audio);
 
         
 
@@ -436,7 +447,7 @@ void* guac_client_pa_write_thread(void* data) {
 
         //guac_client_log_info(client, "Sending audio data");                     
         
-        tmp_sleep(1000);              
+        tmp_sleep(500);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");
@@ -444,6 +455,17 @@ void* guac_client_pa_write_thread(void* data) {
     return NULL;
 }
 
+
+int write_audio_data(unsigned char* buffer, int size, int count) { 
+    FILE *file; 
+    int bytes = 0;
+    
+    file = fopen("/home/sion/Dropbox/Guacamole/logs/raw_audio.raw","a+");
+    bytes = fwrite ((void *) buffer, size, count, file);
+    fclose(file); 
+    
+    return bytes; 
+}
 
 void guac_pa_get_audio_source(char* device) {
     
