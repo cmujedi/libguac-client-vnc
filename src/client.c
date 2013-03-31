@@ -376,15 +376,13 @@ void* guac_client_pa_write_thread(void* data) {
           //guac_client_log_info(client, "Writer counter is: %s", buffer_data);
           
           //memcpy(other_audio_buffer, buffer_data, sizeof(buffer_data));
-          for (i = 0; i < sizeof(buffer_data); i++){
+          for (i = 0; i < BUFSIZE; i++){
 
               other_audio_buffer[counter * i] = buffer_data[i]; 
 
           }
           //strcpy(other_audio_buffer, buff)
           
-         //guac_client_log_info(client, "other_audio_buffer is: %s", other_audio_buffer);
-
           //guac_client_log_info(client, "Writer counter is: %s", buffer_data);
           //while (i < BUFSIZE)
           //other_audio_buffer++;
@@ -393,7 +391,7 @@ void* guac_client_pa_write_thread(void* data) {
           counter++;
         }
         
-        i = 200 * BUFSIZE;
+        guac_client_log_info(client, "other_audio_buffer is: %s", other_audio_buffer);
 
         //while( i > 0)
         //other_audio_buffer--;
@@ -422,13 +420,13 @@ void* guac_client_pa_write_thread(void* data) {
         /* Write pcm data to the audio stream buff */
         audio_stream_write_pcm(audio, other_audio_buffer, 200 * BUFSIZE);
 
-        guac_client_log_info(client, "pcm data... %s", audio->pcm_data);
+        //guac_client_log_info(client, "pcm data... %s", audio->pcm_data);
 
         
         // pthread_mutex_unlock(&(audio_buffer_lock));
                
         /* Flush encoded stream to guacamole */
-        guac_client_log_info(client, "encoded data... %s", audio->encoded_data);
+        //guac_client_log_info(client, "encoded data... %s", audio->encoded_data);
         audio_stream_end(audio);
 
         
@@ -438,7 +436,7 @@ void* guac_client_pa_write_thread(void* data) {
 
         //guac_client_log_info(client, "Sending audio data");                     
         
-        tmp_sleep(250);              
+        tmp_sleep(1000);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");
