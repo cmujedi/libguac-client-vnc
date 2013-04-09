@@ -14,7 +14,10 @@
  * The Original Code is buffer.
  *
  * The Initial Developer of the Original Code are
- * <cmujedi@west.cmu.edu>
+ *   Craig Hokanson <craig.hokanson@sv.cmu.edu>
+ *   Sion Chaudhuri <sion.chaudhuri@west.cmu.edu>
+ *   Gio Perez <gio.perez@sv.cmu.edu>
+ *
  *
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
