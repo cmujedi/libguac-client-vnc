@@ -82,7 +82,7 @@ char* __GUAC_CLIENT = "GUAC_CLIENT";
 // ------ TODO -----------
 // audio_buffer and audio_buffer_lock should not be global variables
 //unsigned char* audio_buffer;
-//pthread_mutex_t audio_buffer_lock;
+// pthread_mutex_t audio_buffer_lock;
 buffer* audio_buffer;
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
@@ -274,14 +274,14 @@ void* guac_client_pa_read_thread(void* data) {
     pa_simple* s_in = NULL;
     int error;
     
-    char* device = malloc(sizeof(char) * 100);
-    guac_pa_get_audio_source(device);
-    if (!device) {
-       guac_client_log_info(client, "Failed to get audio source");
-       goto finish; 
-    }  
+    // char* device = malloc(sizeof(char) * 100);
+    // guac_pa_get_audio_source(device);
+    // if (!device) {
+    //    guac_client_log_info(client, "Failed to get audio source");
+    //    goto finish; 
+    // }  
     
-    guac_client_log_info(client, "Using default audio source: %s\n", device);
+    // guac_client_log_info(client, "Using default audio source: %s\n", device);
     
     /**** TODO: ****/
     static const pa_sample_spec ss = {
@@ -291,7 +291,7 @@ void* guac_client_pa_read_thread(void* data) {
           };
     
     /* Create a new record stream */
-    if (!(s_in = pa_simple_new(NULL, "Record from sound card", PA_STREAM_RECORD, device, "record", &ss, NULL, NULL, &error))) {
+    if (!(s_in = pa_simple_new(NULL, "Record from sound card", PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error))) {
         guac_client_log_info(client, "Failed to create record stream using pa_simple_new(): %s\n", pa_strerror(error));
         goto finish;
     }
@@ -356,115 +356,31 @@ void* guac_client_pa_write_thread(void* data) {
     pa_thread_args* args = (pa_thread_args*) data;
     guac_client* client = args->client;
     audio_stream* audio = args->audio;
-    //unsigned char * other_audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE * 200);
-    //unsigned char other_audio_buffer[BUFSIZE * 200];
     
     guac_client_log_info(client, "Starting Pulse Audio write thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
         unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUFSIZE);
         int counter = 0;
-        //int i;
 
         audio_stream_begin(audio, 44100, 2, 16);
-        
         audio_stream_write_pcm(audio, buffer_data, 4);
          
         while (counter < 200) {
-
-        //  i = 0;
-
           buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUFSIZE, client);
-          
-          //write_audio_data(buffer_data, sizeof(unsigned char), BUFSIZE);
-          
-          //guac_client_log_info(client, "Writer counter is: %s", buffer_data);
-          
-          //memcpy(other_audio_buffer, buffer_data, sizeof(buffer_data));
-          //for (i = 0; i < BUFSIZE; i++) {
-         //      other_audio_buffer[counter * i] = buffer_data[i]; 
-          //}
-          //strcpy(other_audio_buffer, buff)
-          
-          audio_stream_write_pcm(audio, buffer_data, BUFSIZE);
-          
-          //guac_client_log_info(client, "Writer counter is: %s", buffer_data);
-          //while (i < BUFSIZE)
-          //other_audio_buffer++;
-            //other_audio_buffer = other_audio_buffer++;
-  
+          audio_stream_write_pcm(audio, buffer_data, BUFSIZE);  
           counter++;
           
           if (client->state != GUAC_CLIENT_RUNNING)
               break;
         }
         
-        audio_stream_end(audio);
-        
-        //int count = write_audio_data(other_audio_buffer, sizeof(unsigned char), BUFSIZE * 200);
-       // guac_client_log_info(client, "Number of bytes written: %d", count);
-
-        //while( i > 0)
-        //other_audio_buffer--;
-
-          //other_audio_buffer = other_audio_buffer - (200 * BUFSIZE);
-   
-        //guac_client_log_info(client, "other audio buffer: %s", other_audio_buffer);
-
-
-
-        // guac_client_log_info(client, "audio buffer contains: %s", buffer_data);
-
-        // guac_client_log_info(client, "audio stream before encoding... %s", audio->pcm_data);
-
-        /* Init stream with requested format */
-        //audio_stream_begin(audio, 44100, 2, 16);
-
-        // guac_client_log_info(client, "audio stream after stream_begin encoding... %s", audio->encoded_data);
-        
-        // pthread_mutex_lock(&(audio_buffer_lock));
-        
-        /* Write initial 4 bytes of data */
-        
-        //audio_stream_write_pcm(audio, other_audio_buffer, 4);
-        
-        /* Write pcm data to the audio stream buff */
-        //audio_stream_write_pcm(audio, other_audio_buffer, 200 * BUFSIZE);
-
-        //guac_client_log_info(client, "pcm data... %s", audio->pcm_data);
-
-        
-        // pthread_mutex_unlock(&(audio_buffer_lock));
-               
-        /* Flush encoded stream to guacamole */
-        //guac_client_log_info(client, "encoded data... %s", audio->encoded_data);
-        //audio_stream_end(audio);
-
-        
-
-        // guac_client_log_info(client, "audio stream after stream_end encoding... %s", audio->encoded_data);
-
-
-        //guac_client_log_info(client, "Sending audio data");                     
-        
+        audio_stream_end(audio);                 
         tmp_sleep(1000);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");
-
     return NULL;
-}
-
-
-int write_audio_data(unsigned char* buffer, int size, int count) { 
-    FILE *file; 
-    int bytes = 0;
-    
-    file = fopen("/home/sion/Dropbox/Guacamole/logs/raw_audio.raw","a+");
-    bytes = fwrite ((void *) buffer, size, count, file);
-    fclose(file); 
-    
-    return bytes; 
 }
 
 void guac_pa_get_audio_source(char* device) {
