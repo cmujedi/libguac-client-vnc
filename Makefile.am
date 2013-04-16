@@ -44,31 +44,20 @@ AM_CFLAGS = -Werror -Wall -Iinclude
 lib_LTLIBRARIES = libguac-client-vnc.la
 
 libguac_client_vnc_la_SOURCES = \
-	$(OGG_SOURCES)			\
-	src/audio.c				\
 	src/client.c 			\
 	src/vnc_handlers.c 		\
 	src/guac_handlers.c 	\
-	src/wav_encoder.c		\
 	src/queue.c				\
 	src/buffer.c
 	
-noinst_HEADERS = 				\
-	$(OGG_HEADERS)			\
-	include/audio.h			\
+noinst_HEADERS = 		    \
 	include/client.h 		\
 	include/vnc_handlers.h 	\
 	include/guac_handlers.h	\
-	include/wav_encoder.h	\
-	include/queue.h		\
+	include/queue.h		    \
 	include/buffer.h
 
 libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0
 
 EXTRA_DIST = LICENSE
 
-# Compile OGG support if available
-if ENABLE_OGG
-    libguac_client_vnc_la_SOURCES += src/ogg_encoder.c
-    noinst_HEADERS += include/ogg_encoder.h
-endif
