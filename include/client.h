@@ -39,8 +39,9 @@
 #define __GUAC_VNC_CLIENT_H
 
 #include <guacamole/client.h>
+#include <guacamole/audio.h>
 #include <rfb/rfbclient.h>
-#include "audio.h"
+
 
 
 
@@ -67,12 +68,6 @@ typedef struct vnc_guac_client_data {
      * Audio output, if any.
      */
     audio_stream* audio;
-    
-    /**
-     * Lock which is locked and unlocked for each update.
-     */
-    pthread_mutex_t update_lock;
-
 
 } vnc_guac_client_data;
 

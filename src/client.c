@@ -47,10 +47,10 @@
 #include <guacamole/protocol.h>
 #include <guacamole/client.h>
 
-#include "audio.h"
-#include "wav_encoder.h"
+#include <guacamole/audio.h>
+#include <guacamole/wav_encoder.h>
 #ifdef ENABLE_OGG
-#include "ogg_encoder.h"
+#include <guacamole/ogg_encoder.h>
 #endif
 #include "buffer.h"
 
