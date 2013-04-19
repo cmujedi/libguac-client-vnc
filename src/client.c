@@ -366,7 +366,7 @@ void* guac_client_pa_write_thread(void* data) {
         audio_stream_begin(audio, 44100, 2, 16);
         audio_stream_write_pcm(audio, buffer_data, 4);
          
-        while (counter < 200) {
+        while (counter < 100) {
           buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUFSIZE, client);
           audio_stream_write_pcm(audio, buffer_data, BUFSIZE);  
           counter++;
@@ -374,33 +374,36 @@ void* guac_client_pa_write_thread(void* data) {
           if (client->state != GUAC_CLIENT_RUNNING)
               break;
         }
-        
-        audio_stream_end(audio);                 
-        tmp_sleep(1000);              
+
+        audio_stream_end(audio); 
+                
+        tmp_sleep(500);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");
     return NULL;
 }
 
-void guac_pa_get_audio_source(char* device) {
-    
-    /* This is a command to get the name of the default source
-    which should look like the following:
-    alsa_output.pci-0000_00_05.0.analog-stereo.monitor
-    */
-    FILE* fp;
-    char* command = "pactl list | grep -A2 'Source #' | grep 'Name: .*\\.monitor$' | cut -d\" \" -f2";
+// TODO - Delete Me
 
-    fp = popen(command, "r");
+// void guac_pa_get_audio_source(char* device) {
     
-    /* read output from command */ 
-    int result = fscanf(fp, "%s", device);
-    if (result == EOF)
-        return;
+//     /* This is a command to get the name of the default source
+//     which should look like the following:
+//     alsa_output.pci-0000_00_05.0.analog-stereo.monitor
+//     */
+//     FILE* fp;
+//     char* command = "pactl list | grep -A2 'Source #' | grep 'Name: .*\\.monitor$' | cut -d\" \" -f2";
 
-    fclose(fp);
-}
+//     fp = popen(command, "r");
+    
+//     /* read output from command */ 
+//     int result = fscanf(fp, "%s", device);
+//     if (result == EOF)
+//         return;
+
+//     fclose(fp);
+// }
 
 
 
