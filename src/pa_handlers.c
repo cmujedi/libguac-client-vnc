@@ -53,11 +53,40 @@
 #include <pulse/introspect.h>
 #include "pa_handlers.h"
 
-#define BUFSIZE 1024
+/**
+ * The size of each data element in the audio buffer.
+ */
+#define BUF_DATA_SIZE 1024
+
+/**
+ * The length of the audio buffer 
+ */
+#define BUF_LENGTH 100
+
+/**
+ * The number of samples per second of PCM data sent to this stream.
+ */
+#define SAMPLE_RATE 44100
+
+/**
+ * The number of audio channels per sample of PCM data. Legal values are
+ * 1 or 2.
+ */
+#define CHANNELS 2
+
+/**
+ * The number of bits per sample per channel for PCM data. Only 16 is supported.
+ */
+#define BPS 16
+
+/**
+ * The time taken to fill up the audio buffer 
+ */
+#define PA_SLEEP 500
 
 buffer* guac_pa_buffer_alloc() {
     buffer* audio_buffer = malloc(sizeof(buffer));   
-    init_buffer(audio_buffer, sizeof(unsigned char) * BUFSIZE);
+    init_buffer(audio_buffer, sizeof(unsigned char) * BUF_DATA_SIZE);
 
     return audio_buffer;
 }
@@ -71,12 +100,11 @@ void* guac_pa_read_audio(void* data) {
     
     pa_simple* s_in = NULL;
     int error;
-        
-    /**** TODO: ****/
+    
     static const pa_sample_spec ss = {
               .format = PA_SAMPLE_S16LE,
-              .rate = 44100,
-              .channels = 2
+              .rate = SAMPLE_RATE,
+              .channels = CHANNELS
           };
     
     /* Create a new record stream */
@@ -86,7 +114,7 @@ void* guac_pa_read_audio(void* data) {
     }
 
     while (client->state == GUAC_CLIENT_RUNNING) {
-        uint8_t buf[BUFSIZE];
+        uint8_t buf[BUF_DATA_SIZE];
         pa_usec_t latency;
 
         if ((latency = pa_simple_get_latency(s_in, &error)) == (pa_usec_t) -1) {
@@ -99,7 +127,7 @@ void* guac_pa_read_audio(void* data) {
             goto finish;
         }
         
-        buffer_insert(audio_buffer, (void*) buf, sizeof(unsigned char) * 1024);
+        buffer_insert(audio_buffer, (void*) buf, sizeof(unsigned char) * BUF_DATA_SIZE);
     }
 
 finish:
@@ -120,15 +148,14 @@ void* guac_pa_send_audio(void* data) {
     guac_client_log_info(client, "Starting Pulse Audio write thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
-        unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUFSIZE);
+        unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUF_DATA_SIZE);
         int counter = 0;
 
-        audio_stream_begin(audio, 44100, 2, 16);
-        audio_stream_write_pcm(audio, buffer_data, 4);
+        audio_stream_begin(audio, SAMPLE_RATE, CHANNELS, BPS);
          
-        while (counter < 100) {
-            buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUFSIZE, client);
-            audio_stream_write_pcm(audio, buffer_data, BUFSIZE);  
+        while (counter < BUF_LENGTH) {
+            buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUF_DATA_SIZE, client);
+            audio_stream_write_pcm(audio, buffer_data, BUF_DATA_SIZE);  
             counter++;
           
             if (client->state != GUAC_CLIENT_RUNNING)
@@ -137,7 +164,7 @@ void* guac_pa_send_audio(void* data) {
 
         audio_stream_end(audio); 
                 
-        pa_sleep(500);              
+        pa_sleep(PA_SLEEP);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");
@@ -157,5 +184,4 @@ void pa_sleep(int millis) {
     sleep_period.tv_nsec = (millis % 1000) * 1000000L;
 
     nanosleep(&sleep_period, NULL);
-
 }
