@@ -42,9 +42,72 @@
 #ifndef __GUAC_VNC_PA_HANDLERS_H
 #define __GUAC_VNC_PA_HANDLERS_H
 
+/**
+ * The size of each data element in the audio buffer.
+ */
+#define BUF_DATA_SIZE 1024
+
+/**
+ * The length of the audio buffer 
+ */
+#define BUF_LENGTH 100
+
+/**
+ * The number of samples per second of PCM data sent to this stream.
+ */
+#define SAMPLE_RATE 44100
+
+/**
+ * The number of audio channels per sample of PCM data. Legal values are
+ * 1 or 2.
+ */
+#define CHANNELS 2
+
+/**
+ * The number of bits per sample per channel for PCM data. Only 16 is supported.
+ */
+#define BPS 16
+
+/**
+ * The time taken to fill up the audio buffer 
+ */
+#define PA_SLEEP 500
+
+/**
+ * Arguments for the read and send threads
+ */
+typedef struct audio_args {
+    audio_stream* audio;
+    buffer* audio_buffer;
+} audio_args;
+
+/**
+ * Allocates a new audio buffer that can be shared between the 
+ * read and send threads
+ */
 buffer* guac_pa_buffer_alloc();
+
+/**
+ * Reads audio data from Pulse Audio and inserts it into the
+ * audio buffer
+ *
+ * @param data arguments for the read audio thread
+ */
 void* guac_pa_read_audio(void* data);
+
+/**
+ * Gets audio data from the audio buffer and sends it to
+ * guacamole
+ *
+ * @param data arguments for the send audio thread
+ */
 void* guac_pa_send_audio(void* data);
+
+/**
+ * Sleep for the given number of milliseconds.
+ *
+ * @param millis The number of milliseconds to sleep.
+ */
 void pa_sleep(int millis);
 
 #endif

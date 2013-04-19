@@ -53,37 +53,6 @@
 #include <pulse/introspect.h>
 #include "pa_handlers.h"
 
-/**
- * The size of each data element in the audio buffer.
- */
-#define BUF_DATA_SIZE 1024
-
-/**
- * The length of the audio buffer 
- */
-#define BUF_LENGTH 100
-
-/**
- * The number of samples per second of PCM data sent to this stream.
- */
-#define SAMPLE_RATE 44100
-
-/**
- * The number of audio channels per sample of PCM data. Legal values are
- * 1 or 2.
- */
-#define CHANNELS 2
-
-/**
- * The number of bits per sample per channel for PCM data. Only 16 is supported.
- */
-#define BPS 16
-
-/**
- * The time taken to fill up the audio buffer 
- */
-#define PA_SLEEP 500
-
 buffer* guac_pa_buffer_alloc() {
     buffer* audio_buffer = malloc(sizeof(buffer));   
     init_buffer(audio_buffer, sizeof(unsigned char) * BUF_DATA_SIZE);
@@ -171,11 +140,6 @@ void* guac_pa_send_audio(void* data) {
     return NULL;
 }
 
-/**
- * Sleep for the given number of milliseconds.
- *
- * @param millis The number of milliseconds to sleep.
- */
 void pa_sleep(int millis) {
 
     struct timespec sleep_period;

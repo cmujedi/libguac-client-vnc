@@ -69,10 +69,5 @@ typedef struct vnc_guac_client_data {
 
 } vnc_guac_client_data;
 
-typedef struct audio_args {
-    audio_stream* audio;
-    buffer* audio_buffer;
-} audio_args;
-
 #endif
 
