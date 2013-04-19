@@ -18,6 +18,13 @@ compiler: gcc
 
 # install all vnc-related dependencies
 before_install:
+  - sudo apt-get install tomcat6
+  - sudo apt-get install libvncserver0
+  - sudo apt-get install libvncserver-dev
+  - sudo apt-get install libfreerdp1
+  - sudo apt-get install libvorbis-dev
+  - sudo apt-get install libvorbisenc2
+  - sudo apt-get install libpulse-dev
   - sudo apt-get install libcairo2-dev
   - git clone git://github.com/cmujedi/libguac.git
   - cd libguac
@@ -28,13 +35,6 @@ before_install:
   - sudo make install
   - sudo ldconfig
   - cd ..
-  - sudo apt-get install tomcat6
-  - sudo apt-get install libvncserver0
-  - sudo apt-get install libvncserver-dev
-  - sudo apt-get install libfreerdp1
-  - sudo apt-get install libvorbis-dev
-  - sudo apt-get install libvorbisenc2
-  - sudo apt-get install libpulse-dev
 
 # before build script, run autoreconf
 before_script: autoreconf -i
