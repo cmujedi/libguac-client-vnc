@@ -25,6 +25,10 @@
  * http://www.amazon.com/exec/obidos/ASIN/0387001638/thealgorithmrepo/
  * 
  * ***** END LICENSE BLOCK ***** */
+ 
+#ifndef __GUAC_VNC_QUEUE_H
+#define __GUAC_VNC_QUEUE_H
+
 #define QUEUESIZE       200
 
 typedef struct {
@@ -39,3 +43,5 @@ void init_queue(queue* q, int size_of_element);
 int enqueue(queue* q, void* data, int size);
 
 int dequeue(queue* q, void* data, int size);
+
+#endif

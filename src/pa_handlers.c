@@ -55,19 +55,17 @@
 
 #define BUFSIZE 1024
 
-// ------ TODO -----------
-// audio_buffer and audio_buffer_lock should not be global variables
-//unsigned char* audio_buffer;
-// pthread_mutex_t audio_buffer_lock;
-buffer* audio_buffer;
-
-void guac_pa_buffer_alloc() {
-    audio_buffer = malloc(sizeof(buffer));   
+buffer* guac_pa_buffer_alloc() {
+    buffer* audio_buffer = malloc(sizeof(buffer));   
     init_buffer(audio_buffer, sizeof(unsigned char) * BUFSIZE);
+
+    return audio_buffer;
 }
 
 void* guac_pa_read_audio(void* data) {
-    guac_client* client = (guac_client*) data;
+    audio_args* args = (audio_args*) data;
+    buffer* audio_buffer = args->audio_buffer;
+    guac_client* client = args->audio->client;
     
     guac_client_log_info(client, "Starting Pulse Audio read thread...");
     
@@ -114,7 +112,9 @@ finish:
 }
 
 void* guac_pa_send_audio(void* data) {
-    audio_stream* audio = (audio_stream*) data; 
+    audio_args* args = (audio_args*) data;
+    audio_stream* audio = args->audio; 
+    buffer* audio_buffer = args->audio_buffer;
     guac_client* client = audio->client;
     
     guac_client_log_info(client, "Starting Pulse Audio write thread...");

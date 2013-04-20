@@ -41,7 +41,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "buffer.h"
-
+#include "queue.h"
+ 
 void init_buffer(buffer* buf, int size_of_data) {
     init_queue(&(buf->data_queue), size_of_data);
 }

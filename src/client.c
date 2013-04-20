@@ -162,14 +162,17 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
        }
 
        /* If an encoding is available, load the sound plugin */
-       if (guac_client_data->audio != NULL) {
+       audio_stream* audio = guac_client_data->audio;
+       if (audio != NULL) {
            
-           guac_pa_buffer_alloc();          
+          audio_args* args = malloc(sizeof(audio_args));
+          args->audio = audio;
+          args->audio_buffer = guac_pa_buffer_alloc();          
                      
            pthread_t pa_read_thread;
            
            /* Create a plugin instead of the thread */
-           if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio, (void*) client)) {
+           if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio, (void*) args)) {
                guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
                guac_socket_flush(client->socket);
                return 1;
@@ -178,7 +181,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
            pthread_t pa_send_thread;
            
            /* Create a plugin instead of the thread */
-           if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio, (void*) guac_client_data->audio)) {
+           if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio, (void*) args)) {
                guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
                guac_socket_flush(client->socket);
                return 1;

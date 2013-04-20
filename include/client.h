@@ -41,9 +41,7 @@
 #include <guacamole/client.h>
 #include <guacamole/audio.h>
 #include <rfb/rfbclient.h>
-
-
-
+#include "buffer.h"
 
 extern char* __GUAC_CLIENT;
 
@@ -70,6 +68,11 @@ typedef struct vnc_guac_client_data {
     audio_stream* audio;
 
 } vnc_guac_client_data;
+
+typedef struct audio_args {
+    audio_stream* audio;
+    buffer* audio_buffer;
+} audio_args;
 
 #endif
 

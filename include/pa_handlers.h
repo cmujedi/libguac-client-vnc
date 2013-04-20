@@ -42,7 +42,7 @@
 #ifndef __GUAC_VNC_PA_HANDLERS_H
 #define __GUAC_VNC_PA_HANDLERS_H
 
-void guac_pa_buffer_alloc();
+buffer* guac_pa_buffer_alloc();
 void* guac_pa_read_audio(void* data);
 void* guac_pa_send_audio(void* data);
 void pa_sleep(int millis);

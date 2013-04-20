@@ -36,6 +36,9 @@
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
  * ***** END LICENSE BLOCK ***** */
+
+#ifndef __GUAC_VNC_BUFFER_H
+#define __GUAC_VNC_BUFFER_H
  
 #include <pthread.h>
 #include <guacamole/client.h>
@@ -52,3 +55,5 @@ void init_buffer(buffer* buf, int size_of_data);
 void buffer_insert(buffer* buf, void* data, int size_of_data);
  
 void buffer_remove(buffer* buf, void* data, int size_of_data, guac_client* client);
+
+#endif

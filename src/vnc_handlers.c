@@ -52,8 +52,6 @@
 
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
-    // pthread_mutex_t audio_buffer_lock;
-
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
@@ -128,10 +126,8 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     /* Send cursor data*/
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_ARGB32, w, h, stride);
-    // pthread_mutex_lock(&(audio_buffer_lock));
     guac_protocol_send_png(socket,
             GUAC_COMP_SRC, cursor_layer, 0, 0, surface);
-    // pthread_mutex_unlock(&(audio_buffer_lock));
 
     /* Update cursor */
     guac_protocol_send_cursor(socket, x, y, cursor_layer, 0, 0, w, h);
