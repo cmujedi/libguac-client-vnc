@@ -20,7 +20,11 @@
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *
+ * The Initial Developer of the Original Code are
+ *   Craig Hokanson <craig.hokanson@sv.cmu.edu>
+ *   Sion Chaudhuri <sion.chaudhuri@west.cmu.edu>
+ *   Gio Perez <gio.perez@sv.cmu.edu>
+
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
  * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -35,16 +39,13 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __GUAC_VNC_GUAC_HANDLERS_H
-#define __GUAC_VNC_GUAC_HANDLERS_H
+#ifndef __GUAC_VNC_PA_HANDLERS_H
+#define __GUAC_VNC_PA_HANDLERS_H
 
-#include <guacamole/client.h>
-
-int vnc_guac_client_handle_messages(guac_client* client);
-int vnc_guac_client_mouse_handler(guac_client* client, int x, int y, int mask);
-int vnc_guac_client_key_handler(guac_client* client, int keysym, int pressed);
-int vnc_guac_client_clipboard_handler(guac_client* client, char* data);
-int vnc_guac_client_free_handler(guac_client* client);
+void guac_pa_buffer_alloc();
+void* guac_pa_read_audio(void* data);
+void* guac_pa_send_audio(void* data);
+void pa_sleep(int millis);
 
 #endif
 

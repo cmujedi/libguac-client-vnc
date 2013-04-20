@@ -71,27 +71,5 @@ typedef struct vnc_guac_client_data {
 
 } vnc_guac_client_data;
 
-typedef struct pa_thread_args {
-
-    /**
-    * Guac client
-    */
-    guac_client* client;
-
-    /**
-    * Audio stream
-    */
-    audio_stream* audio;
-    
-} pa_thread_args;
-
-void* guac_client_pa_read_thread(void* data);
-
-void* guac_client_pa_write_thread(void* data);
-
-void guac_pa_get_audio_source(char* device);
-
-int write_audio_data(unsigned char* buffer, int size, int count); 
-
 #endif
 

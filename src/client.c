@@ -38,8 +38,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <errno.h>
-#include <time.h>
 
 #include <rfb/rfbclient.h>
 
@@ -52,17 +50,11 @@
 #ifdef ENABLE_OGG
 #include <guacamole/ogg_encoder.h>
 #endif
-#include "buffer.h"
 
 #include "client.h"
 #include "vnc_handlers.h"
 #include "guac_handlers.h"
-
-#include <pulse/simple.h>
-#include <pulse/error.h>
-#include <pulse/introspect.h>
-
-#define BUFSIZE 1024
+#include "pa_handlers.h"
 
 /* Client plugin arguments */
 const char* GUAC_CLIENT_ARGS[] = {
@@ -78,12 +70,6 @@ const char* GUAC_CLIENT_ARGS[] = {
 };
 
 char* __GUAC_CLIENT = "GUAC_CLIENT";
-
-// ------ TODO -----------
-// audio_buffer and audio_buffer_lock should not be global variables
-//unsigned char* audio_buffer;
-// pthread_mutex_t audio_buffer_lock;
-buffer* audio_buffer;
 
 int guac_client_init(guac_client* client, int argc, char** argv) {
 
@@ -178,35 +164,21 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
        /* If an encoding is available, load the sound plugin */
        if (guac_client_data->audio != NULL) {
            
-           /* Load sound plugin
-           if (freerdp_channels_load_plugin(channels, instance->settings,
-                       "guac_rdpsnd", guac_client_data->audio))
-               guac_client_log_error(client,
-                       "Failed to load guac_rdpsnd plugin."); */
-            
-           // audio_buffer is the data structure that is shared by both read and write threads
-           // ----- TODO -----
-           // Put a lock around the shared data structure
-           //audio_buffer = malloc(sizeof(unsigned char) * BUFSIZE);
-           audio_buffer = malloc(sizeof(buffer));   
-           init_buffer(audio_buffer, sizeof(unsigned char) * 1024);
-           
+           guac_pa_buffer_alloc();          
+                     
            pthread_t pa_read_thread;
            
            /* Create a plugin instead of the thread */
-           if (pthread_create(&pa_read_thread, NULL, guac_client_pa_read_thread, (void*) client)) {
+           if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio, (void*) client)) {
                guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
                guac_socket_flush(client->socket);
                return 1;
            }
            
-           pthread_t pa_write_thread;
-           pa_thread_args* pa_args = malloc(sizeof(pa_thread_args*));
-           pa_args->client = client;
-           pa_args->audio  = guac_client_data->audio;
+           pthread_t pa_send_thread;
            
            /* Create a plugin instead of the thread */
-           if (pthread_create(&pa_write_thread, NULL, guac_client_pa_write_thread, (void*) pa_args)) {
+           if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio, (void*) guac_client_data->audio)) {
                guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
                guac_socket_flush(client->socket);
                return 1;
@@ -265,145 +237,3 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     return 0;
 
 }
-
-void* guac_client_pa_read_thread(void* data) {
-    guac_client* client = (guac_client*) data;
-    
-    guac_client_log_info(client, "Starting Pulse Audio read thread...");
-    
-    pa_simple* s_in = NULL;
-    int error;
-    
-    // char* device = malloc(sizeof(char) * 100);
-    // guac_pa_get_audio_source(device);
-    // if (!device) {
-    //    guac_client_log_info(client, "Failed to get audio source");
-    //    goto finish; 
-    // }  
-    
-    // guac_client_log_info(client, "Using default audio source: %s\n", device);
-    
-    /**** TODO: ****/
-    static const pa_sample_spec ss = {
-              .format = PA_SAMPLE_S16LE,
-              .rate = 44100,
-              .channels = 2
-          };
-    
-    /* Create a new record stream */
-    if (!(s_in = pa_simple_new(NULL, "Record from sound card", PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error))) {
-        guac_client_log_info(client, "Failed to create record stream using pa_simple_new(): %s\n", pa_strerror(error));
-        goto finish;
-    }
-
-    while (client->state == GUAC_CLIENT_RUNNING) {
-        uint8_t buf[BUFSIZE];
-        pa_usec_t latency;
-
-        if ((latency = pa_simple_get_latency(s_in, &error)) == (pa_usec_t) -1) {
-            guac_client_log_info(client, "Failed to get latency using pa_simple_get_latency(): %s\n", pa_strerror(error));
-            goto finish;
-        }
-
-        if (pa_simple_read(s_in, buf, sizeof(buf), &error) < 0) {
-            guac_client_log_info(client, "Failed to read audio buffer using pa_simple_read(): %s\n", pa_strerror(error));
-            goto finish;
-        }
-        
-        // guac_client_log_info(client, "audio buffer contains: %s", buf);
-
-        // pthread_mutex_lock(&(audio_buffer_lock));
-        
-        buffer_insert(audio_buffer, (void*) buf, sizeof(unsigned char) * 1024);
-
-        // if((audio_buffer->data_queue).count > 0) 
-        // guac_client_log_info(client, "the audio buffer count is: %d", (audio_buffer->data_queue).count);
-
-          // guac_client_log_info(client, "the audio buffer contains: %s", (audio_buffer->data_queue).items[(audio_buffer->data_queue).last]);
-        
-        // memcpy(audio_buffer, buf, sizeof(buf));
-        //        
-        //        pthread_mutex_unlock(&(audio_buffer_lock));
-    }
-
-finish:
-    if (s_in)
-        pa_simple_free(s_in);
-
-    guac_client_log_info(client, "Stopping Pulse Audio read thread...");
-
-    return NULL;
-}
-
-/**
- * Sleep for the given number of milliseconds.
- *
- * @param millis The number of milliseconds to sleep.
- */
-void tmp_sleep(int millis) {
-
-    struct timespec sleep_period;
-
-    sleep_period.tv_sec =   millis / 1000;
-    sleep_period.tv_nsec = (millis % 1000) * 1000000L;
-
-    nanosleep(&sleep_period, NULL);
-
-}
-
-void* guac_client_pa_write_thread(void* data) {
-     
-    pa_thread_args* args = (pa_thread_args*) data;
-    guac_client* client = args->client;
-    audio_stream* audio = args->audio;
-    
-    guac_client_log_info(client, "Starting Pulse Audio write thread...");
-
-    while (client->state == GUAC_CLIENT_RUNNING) {
-        unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUFSIZE);
-        int counter = 0;
-
-        audio_stream_begin(audio, 44100, 2, 16);
-        audio_stream_write_pcm(audio, buffer_data, 4);
-         
-        while (counter < 100) {
-          buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUFSIZE, client);
-          audio_stream_write_pcm(audio, buffer_data, BUFSIZE);  
-          counter++;
-          
-          if (client->state != GUAC_CLIENT_RUNNING)
-              break;
-        }
-
-        audio_stream_end(audio); 
-                
-        tmp_sleep(500);              
-    }
-  
-    guac_client_log_info(client, "Stopping Pulse Audio write thread...");
-    return NULL;
-}
-
-// TODO - Delete Me
-
-// void guac_pa_get_audio_source(char* device) {
-    
-//     /* This is a command to get the name of the default source
-//     which should look like the following:
-//     alsa_output.pci-0000_00_05.0.analog-stereo.monitor
-//     */
-//     FILE* fp;
-//     char* command = "pactl list | grep -A2 'Source #' | grep 'Name: .*\\.monitor$' | cut -d\" \" -f2";
-
-//     fp = popen(command, "r");
-    
-//     /* read output from command */ 
-//     int result = fscanf(fp, "%s", device);
-//     if (result == EOF)
-//         return;
-
-//     fclose(fp);
-// }
-
-
-

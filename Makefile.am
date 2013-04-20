@@ -37,9 +37,7 @@
 AUTOMAKE_OPTIONS = foreign
 
 ACLOCAL_AMFLAGS = -I m4
-AM_CFLAGS = -Werror -Wall -Iinclude
-
-# gio removed gcc flag option -pedantic
+AM_CFLAGS = -Werror -Wall -Iinclude 
 
 lib_LTLIBRARIES = libguac-client-vnc.la
 
@@ -47,6 +45,7 @@ libguac_client_vnc_la_SOURCES = \
 	src/client.c 			\
 	src/vnc_handlers.c 		\
 	src/guac_handlers.c 	\
+	src/pa_handlers.c 		\
 	src/queue.c				\
 	src/buffer.c
 	
@@ -54,6 +53,7 @@ noinst_HEADERS = 		    \
 	include/client.h 		\
 	include/vnc_handlers.h 	\
 	include/guac_handlers.h	\
+	include/pa_handlers.h   \
 	include/queue.h		    \
 	include/buffer.h
 
