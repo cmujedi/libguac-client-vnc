@@ -133,7 +133,7 @@ void* guac_pa_send_audio(void* data) {
 
         audio_stream_end(audio); 
                 
-        pa_sleep(PA_SLEEP);              
+        pa_sleep(SEND_INTERVAL);              
     }
   
     guac_client_log_info(client, "Stopping Pulse Audio write thread...");
