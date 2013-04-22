@@ -30,7 +30,9 @@ typedef struct {
         int count;                      /* number of queue elements */
 } queue;
 
-void init_queue(queue* q, int size_of_element);
+void queue_init(queue* q, int size_of_element);
+
+void queue_free(queue* q);
 
 int enqueue(queue* q, void* data, int size);
 

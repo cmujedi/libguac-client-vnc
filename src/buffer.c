@@ -43,8 +43,12 @@
 #include "buffer.h"
 #include "queue.h"
  
-void init_buffer(buffer* buf, int size_of_data) {
-    init_queue(&(buf->data_queue), size_of_data);
+void buffer_init(buffer* buf, int size_of_data) {
+    queue_init(&(buf->data_queue), size_of_data);
+}
+
+void buffer_free(buffer* buf) {
+    queue_free(&(buf->data_queue));
 }
 
 void buffer_insert(buffer* buf, void* data, int size_of_data) {

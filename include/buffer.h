@@ -50,7 +50,9 @@ typedef struct {
     pthread_cond_t cond;
 } buffer;
 
-void init_buffer(buffer* buf, int size_of_data);
+void buffer_init(buffer* buf, int size_of_data);
+
+void buffer_free(buffer* buf);
 
 void buffer_insert(buffer* buf, void* data, int size_of_data);
  

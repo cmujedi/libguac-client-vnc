@@ -22,7 +22,7 @@
 #include <string.h>
 #include "queue.h"
 
-void init_queue(queue* q, int size_of_element) {   
+void queue_init(queue* q, int size_of_element) {   
     q->first = 0;
     q->last = QUEUESIZE-1;
     q->count = 0;
@@ -31,6 +31,13 @@ void init_queue(queue* q, int size_of_element) {
     for(i = 0; i < QUEUESIZE; i++)
         q->items[i] = malloc(size_of_element);
 }
+
+void queue_free(queue* q) {     
+    int i;
+    for(i = 0; i < QUEUESIZE; i++)
+        free(q->items[i]);
+}
+
 
 int enqueue(queue* q, void* data, int size) {
     if (q->count >= QUEUESIZE)

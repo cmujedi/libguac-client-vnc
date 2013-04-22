@@ -88,6 +88,12 @@ typedef struct audio_args {
 buffer* guac_pa_buffer_alloc();
 
 /**
+ * Frees up allocated resources for reading and sending audio data 
+ * read and send threads
+ */
+void guac_pa_buffer_free(buffer* audio_buffer);
+
+/**
  * Reads audio data from Pulse Audio and inserts it into the
  * audio buffer
  *

@@ -55,9 +55,14 @@
 
 buffer* guac_pa_buffer_alloc() {
     buffer* audio_buffer = malloc(sizeof(buffer));   
-    init_buffer(audio_buffer, sizeof(unsigned char) * BUF_DATA_SIZE);
+    buffer_init(audio_buffer, sizeof(unsigned char) * BUF_DATA_SIZE);
 
     return audio_buffer;
+}
+
+void guac_pa_buffer_free(buffer* audio_buffer) {
+    buffer_free(audio_buffer);
+    free(audio_buffer);
 }
 
 void* guac_pa_read_audio(void* data) {
