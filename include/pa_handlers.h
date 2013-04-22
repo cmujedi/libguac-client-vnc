@@ -55,7 +55,7 @@
 /**
  * The number of samples per second of PCM data sent to this stream.
  */
-#define SAMPLE_RATE 44050
+#define SAMPLE_RATE 44100
 
 /**
  * The number of audio channels per sample of PCM data. Legal values are
