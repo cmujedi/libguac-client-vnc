@@ -175,7 +175,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
            
            /* Create a thread to read audio data */
            if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio, (void*) args)) {
-               guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
+               guac_protocol_send_error(client->socket, "Error initializing PulseAudio thread");
                guac_socket_flush(client->socket);
                return 1;
            }
@@ -186,7 +186,7 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
            
            /* Create a thread to send audio data */
            if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio, (void*) args)) {
-               guac_protocol_send_error(client->socket, "Error initializing pulse audio thread");
+               guac_protocol_send_error(client->socket, "Error initializing PulseAudio thread");
                guac_socket_flush(client->socket);
                return 1;
             }

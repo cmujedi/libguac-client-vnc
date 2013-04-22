@@ -70,7 +70,7 @@ typedef struct vnc_guac_client_data {
     /**
      * Audio buffer, if any.
      */
-    audio_buffer* audio_buffer;
+    buffer* audio_buffer;
     
     /**
      * Handle to the audio read thread.

@@ -70,7 +70,7 @@ void* guac_pa_read_audio(void* data) {
     buffer* audio_buffer = args->audio_buffer;
     guac_client* client = args->audio->client;
     
-    guac_client_log_info(client, "Starting Pulse Audio read thread...");
+    guac_client_log_info(client, "Starting audio read thread...");
     
     pa_simple* s_in = NULL;
     int error;
@@ -108,7 +108,7 @@ finish:
     if (s_in)
         pa_simple_free(s_in);
 
-    guac_client_log_info(client, "Stopping Pulse Audio read thread...");
+    guac_client_log_info(client, "Stopping audio read thread...");
 
     return NULL;
 }
@@ -119,7 +119,7 @@ void* guac_pa_send_audio(void* data) {
     buffer* audio_buffer = args->audio_buffer;
     guac_client* client = audio->client;
     
-    guac_client_log_info(client, "Starting Pulse Audio write thread...");
+    guac_client_log_info(client, "Starting audio send thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
         unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUF_DATA_SIZE);
@@ -141,7 +141,7 @@ void* guac_pa_send_audio(void* data) {
         pa_sleep(SEND_INTERVAL);              
     }
   
-    guac_client_log_info(client, "Stopping Pulse Audio write thread...");
+    guac_client_log_info(client, "Stopping audio send thread...");
     return NULL;
 }
 

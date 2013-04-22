@@ -38,12 +38,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <pthread.h>
 
 #include <rfb/rfbclient.h>
 
 #include <guacamole/client.h>
 
 #include "client.h"
+#include "pa_handlers.h"
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 
@@ -102,12 +104,19 @@ int vnc_guac_client_free_handler(guac_client* client) {
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) client->data;
     rfbClient* rfb_client = guac_client_data->rfb_client;
 
-    /* Wait for audio read and send threads to join */
-    pthread_join(*(guac_client_data->audio_read_thread), NULL);
-    pthread_join(*(guac_client_data->audio_send_thread), NULL);
+    if (guac_client_data->audio_enabled) {
+    
+        /* Wait for audio read and send threads to join */
+        if (guac_client_data->audio_read_thread)
+            pthread_join(*(guac_client_data->audio_read_thread), NULL);
+        
+        if (guac_client_data->audio_send_thread)
+            pthread_join(*(guac_client_data->audio_send_thread), NULL);
        
-    /* Free up buffer allocated for audio stream */
-    guac_pa_buffer_free(guac_client_data->audio_buffer)
+        /* Free up buffer allocated for audio stream */
+        if(guac_client_data->audio_buffer)
+            guac_pa_buffer_free(guac_client_data->audio_buffer);
+    }
 
     /* Free encodings string, if used */
     if (guac_client_data->encodings != NULL)
