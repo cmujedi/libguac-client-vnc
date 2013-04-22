@@ -138,14 +138,14 @@ void* guac_pa_send_audio(void* data) {
 
         audio_stream_end(audio); 
                 
-        pa_sleep(SEND_INTERVAL);              
+        guac_pa_sleep(SEND_INTERVAL);              
     }
   
     guac_client_log_info(client, "Stopping audio send thread...");
     return NULL;
 }
 
-void pa_sleep(int millis) {
+void guac_pa_sleep(int millis) {
 
     struct timespec sleep_period;
 

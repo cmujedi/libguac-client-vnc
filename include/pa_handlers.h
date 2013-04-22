@@ -114,7 +114,7 @@ void* guac_pa_send_audio(void* data);
  *
  * @param millis The number of milliseconds to sleep.
  */
-void pa_sleep(int millis);
+void guac_pa_sleep(int millis);
 
 #endif
 
