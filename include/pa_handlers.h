@@ -50,12 +50,12 @@
 /**
  * The length of the audio buffer 
  */
-#define BUF_LENGTH 20
+#define BUF_LENGTH 100
 
 /**
  * The number of samples per second of PCM data sent to this stream.
  */
-#define SAMPLE_RATE 11025
+#define SAMPLE_RATE 44050
 
 /**
  * The number of audio channels per sample of PCM data. Legal values are
@@ -71,7 +71,7 @@
 /**
  * Minimum interval between two audio send instructions
  */
-#define SEND_INTERVAL 25
+#define SEND_INTERVAL 500
 
 /**
  * Arguments for the read and send threads

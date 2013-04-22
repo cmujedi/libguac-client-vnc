@@ -248,10 +248,14 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
 
+    pthread_mutex_lock(&(gc->send_lock));
+
     /* For now, only use default layer */
     guac_protocol_send_copy(socket,
                             GUAC_DEFAULT_LAYER, src_x,  src_y, w, h,
             GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, dest_x, dest_y);
+    
+    pthread_mutex_unlock(&(gc->send_lock));
 
     ((vnc_guac_client_data*) gc->data)->copy_rect_used = 1;
 
@@ -317,9 +321,12 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
 
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
+    
+    pthread_mutex_lock(&(gc->send_lock));
 
     guac_protocol_send_clipboard(socket, text);
-
+    
+    pthread_mutex_unlock(&(gc->send_lock));
 }
 
 void guac_vnc_client_log_info(const char* format, ...) {
