@@ -76,6 +76,10 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     rfbClient* rfb_client;
 
     vnc_guac_client_data* guac_client_data;
+    
+    audio_args* args;
+    
+    pthread_t pa_read_thread, pa_send_thread;
 
     int read_only;
     int i;
@@ -135,69 +139,63 @@ int guac_client_init(guac_client* client, int argc, char** argv) {
     guac_client_data->audio_enabled = (strcmp(argv[7], "true") != 0);
     
    /* If audio enabled, choose an encoder */
-   if (guac_client_data->audio_enabled) {       
-
-       /* Choose an encoding */
-       for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
-
-           const char* mimetype = client->info.audio_mimetypes[i];
-
+    if (guac_client_data->audio_enabled) {       
+ 
+        /* Choose an encoding */
+        for (i=0; client->info.audio_mimetypes[i] != NULL; i++) {
+ 
+            const char* mimetype = client->info.audio_mimetypes[i];
+ 
 #ifdef ENABLE_OGG
-           /* If Ogg is supported, done. */
-           if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
-               guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
-               guac_client_data->audio = audio_stream_alloc(client,
-                       ogg_encoder);
-               break;
-           }
+            /* If Ogg is supported, done. */
+            if (strcmp(mimetype, ogg_encoder->mimetype) == 0) {
+                guac_client_log_info(client, "Loading Ogg Vorbis encoder.");
+                guac_client_data->audio = audio_stream_alloc(client,
+                        ogg_encoder);
+                break;
+            }
 #endif
-
-           /* If wav is supported, done. */
-           if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
-               guac_client_log_info(client, "Loading wav encoder.");
-               guac_client_data->audio = audio_stream_alloc(client,
-                       wav_encoder);
-               break;
-           }
-       }
-
-       /* If an encoding is available, load the sound plugin */
-       audio_stream* audio = guac_client_data->audio;
-       if (audio != NULL) {
-          
-          guac_client_data->audio_buffer = guac_pa_buffer_alloc();
-           
-          audio_args* args = malloc(sizeof(audio_args));
-          args->audio = audio;
-          args->audio_buffer = guac_client_data->audio_buffer;         
-                     
-           pthread_t pa_read_thread;
-           
-           /* Create a thread to read audio data */
-           if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio, (void*) args)) {
-               guac_protocol_send_error(client->socket, "Error initializing PulseAudio thread");
-               guac_socket_flush(client->socket);
-               return 1;
-           }
-           
-           guac_client_data->audio_read_thread = &pa_read_thread;
-           
-           pthread_t pa_send_thread;
-           
-           /* Create a thread to send audio data */
-           if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio, (void*) args)) {
-               guac_protocol_send_error(client->socket, "Error initializing PulseAudio thread");
-               guac_socket_flush(client->socket);
-               return 1;
+ 
+            /* If wav is supported, done. */
+            if (strcmp(mimetype, wav_encoder->mimetype) == 0) {
+                guac_client_log_info(client, "Loading wav encoder.");
+                guac_client_data->audio = audio_stream_alloc(client,
+                        wav_encoder);
+                break;
+            }
+        }
+ 
+        /* If an encoding is available, load the sound plugin */
+        if (guac_client_data->audio != NULL) {
+            
+            guac_client_data->audio_buffer = guac_pa_buffer_alloc();
+            
+            args = malloc(sizeof(audio_args));
+            args->audio = guac_client_data->audio;
+            args->audio_buffer = guac_client_data->audio_buffer;         
+            
+            /* Create a thread to read audio data */
+            if (pthread_create(&pa_read_thread, NULL, guac_pa_read_audio, (void*) args)) {
+                guac_protocol_send_error(client->socket, "Error initializing PulseAudio thread");
+                guac_socket_flush(client->socket);
+                return 1;
+            }
+            
+            guac_client_data->audio_read_thread = &pa_read_thread;
+            
+            /* Create a thread to send audio data */
+            if (pthread_create(&pa_send_thread, NULL, guac_pa_send_audio, (void*) args)) {
+                guac_protocol_send_error(client->socket, "Error initializing PulseAudio thread");
+                guac_socket_flush(client->socket);
+                return 1;
             }
             
             guac_client_data->audio_send_thread = &pa_send_thread;
-       }
-       else
-           guac_client_log_info(client,
-                   "No available audio encoding. Sound disabled.");
-
-   } /* end if audio enabled */
+        }
+        else
+            guac_client_log_info(client, "No available audio encoding. Sound disabled.");
+ 
+    } /* end if audio enabled */
 
     /* Hook into allocation so we can handle resize. */
     guac_client_data->rfb_MallocFrameBuffer = rfb_client->MallocFrameBuffer;

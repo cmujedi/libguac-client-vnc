@@ -44,18 +44,24 @@
 #include "queue.h"
  
 void buffer_init(buffer* buf, int size_of_data) {
+    
     queue_init(&(buf->data_queue), size_of_data);
+    
 }
 
 void buffer_free(buffer* buf) {
+    
     queue_free(&(buf->data_queue));
+    
 }
 
 void buffer_insert(buffer* buf, void* data, int size_of_data) {
+    
     pthread_mutex_lock(&(buf->update_lock));
     enqueue(&(buf->data_queue), data, size_of_data);
     pthread_mutex_unlock(&(buf->update_lock));
-    pthread_cond_signal(&(buf->cond));     
+    pthread_cond_signal(&(buf->cond));
+    
 }
 
 void buffer_remove(buffer* buf, void* data, int size_of_data, guac_client* client) {
@@ -66,4 +72,5 @@ void buffer_remove(buffer* buf, void* data, int size_of_data, guac_client* clien
 
     dequeue(&(buf->data_queue), data, size_of_data);
     pthread_mutex_unlock(&(buf->update_lock));
+
 }

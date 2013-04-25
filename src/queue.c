@@ -24,23 +24,28 @@
 #include "queue.h"
 
 void queue_init(queue* q, int size_of_element) {   
+    
+    int i;
+    
     q->first = 0;
     q->last = QUEUESIZE-1;
     q->count = 0;
     
-    int i;
     for(i = 0; i < QUEUESIZE; i++)
         q->items[i] = malloc(size_of_element);
 }
 
 void queue_free(queue* q) {     
+    
     int i;
+    
     for(i = 0; i < QUEUESIZE; i++)
         free(q->items[i]);
 }
 
 
 int enqueue(queue* q, void* data, int size) {
+    
     if (q->count >= QUEUESIZE)
         return -1;
         
@@ -49,9 +54,11 @@ int enqueue(queue* q, void* data, int size) {
     q->count = q->count + 1;
     
     return 0;
+    
 }
 
 int dequeue(queue* q, void* data, int size) {
+    
     if (q->count <= 0) 
         return -1;
         
@@ -60,5 +67,6 @@ int dequeue(queue* q, void* data, int size) {
     q->count = q->count - 1;
 
     return 0;
+    
 }
 

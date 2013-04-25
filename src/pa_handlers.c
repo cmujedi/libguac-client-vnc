@@ -52,95 +52,113 @@
 #include "pa_handlers.h"
 
 buffer* guac_pa_buffer_alloc() {
+    
     buffer* audio_buffer = malloc(sizeof(buffer));   
     buffer_init(audio_buffer, sizeof(unsigned char) * BUF_DATA_SIZE);
 
     return audio_buffer;
+
 }
 
 void guac_pa_buffer_free(buffer* audio_buffer) {
+
     buffer_free(audio_buffer);
     free(audio_buffer);
+
 }
 
 void* guac_pa_read_audio(void* data) {
+    
     audio_args* args = (audio_args*) data;
     buffer* audio_buffer = args->audio_buffer;
     guac_client* client = args->audio->client;
+    pa_simple* s_in;
+    int error;
+    pa_usec_t latency;
+    unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUF_DATA_SIZE);
+    pa_sample_spec* sample_spec = malloc(sizeof(pa_sample_spec));
+    
+    /* Create the sample spec for a record stream */
+    sample_spec = malloc(sizeof(pa_sample_spec)); 
+    sample_spec->format = PA_SAMPLE_S16LE;
+    sample_spec->rate = SAMPLE_RATE;
+    sample_spec->channels = CHANNELS;
     
     guac_client_log_info(client, "Starting audio read thread...");
     
-    pa_simple* s_in = NULL;
-    int error;
-    
-    static const pa_sample_spec ss = {
-              .format = PA_SAMPLE_S16LE,
-              .rate = SAMPLE_RATE,
-              .channels = CHANNELS
-          };
-    
     /* Create a new record stream */
-    if (!(s_in = pa_simple_new(NULL, "Record from sound card", PA_STREAM_RECORD, NULL, "record", &ss, NULL, NULL, &error))) {
+    if (!(s_in = pa_simple_new(NULL, "Record from sound card", PA_STREAM_RECORD, NULL, "record", sample_spec, NULL, NULL, &error))) {
         guac_client_log_info(client, "Failed to create record stream using pa_simple_new(): %s\n", pa_strerror(error));
         goto finish;
     }
 
     while (client->state == GUAC_CLIENT_RUNNING) {
-        uint8_t buf[BUF_DATA_SIZE];
-        pa_usec_t latency;
-
+        
         if ((latency = pa_simple_get_latency(s_in, &error)) == (pa_usec_t) -1) {
             guac_client_log_info(client, "Failed to get latency using pa_simple_get_latency(): %s\n", pa_strerror(error));
             goto finish;
         }
 
-        if (pa_simple_read(s_in, buf, sizeof(buf), &error) < 0) {
+        if (pa_simple_read(s_in, buffer_data, sizeof(unsigned char) * BUF_DATA_SIZE/*sizeof(buffer_data)*/, &error) < 0) {
             guac_client_log_info(client, "Failed to read audio buffer using pa_simple_read(): %s\n", pa_strerror(error));
             goto finish;
         }
         
-        buffer_insert(audio_buffer, (void*) buf, sizeof(unsigned char) * BUF_DATA_SIZE);
+        buffer_insert(audio_buffer, (void*) buffer_data, sizeof(unsigned char) * BUF_DATA_SIZE);
+        
     }
 
 finish:
     if (s_in)
         pa_simple_free(s_in);
-
+    
+    free(buffer_data);
+    free(sample_spec);
+    
     guac_client_log_info(client, "Stopping audio read thread...");
 
     return NULL;
+
 }
 
 void* guac_pa_send_audio(void* data) {
+
     audio_args* args = (audio_args*) data;
     audio_stream* audio = args->audio; 
     buffer* audio_buffer = args->audio_buffer;
     guac_client* client = audio->client;
-    
+    unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUF_DATA_SIZE);
+    int counter;
+        
     guac_client_log_info(client, "Starting audio send thread...");
 
     while (client->state == GUAC_CLIENT_RUNNING) {
-        unsigned char* buffer_data = malloc(sizeof(unsigned char) * BUF_DATA_SIZE);
-        int counter = 0;
-
+        
         audio_stream_begin(audio, SAMPLE_RATE, CHANNELS, BPS);
-         
+        
+        counter = 0;
         while (counter < BUF_LENGTH) {
+            
             buffer_remove(audio_buffer, (void *) buffer_data, sizeof(unsigned char) * BUF_DATA_SIZE, client);
             audio_stream_write_pcm(audio, buffer_data, BUF_DATA_SIZE);  
             counter++;
           
             if (client->state != GUAC_CLIENT_RUNNING)
                 break;
+            
         }
 
         audio_stream_end(audio); 
-                
+
         guac_pa_sleep(SEND_INTERVAL);              
     }
-  
+
+    free(buffer_data);
+
     guac_client_log_info(client, "Stopping audio send thread...");
+    
     return NULL;
+
 }
 
 void guac_pa_sleep(int millis) {
@@ -151,4 +169,5 @@ void guac_pa_sleep(int millis) {
     sleep_period.tv_nsec = (millis % 1000) * 1000000L;
 
     nanosleep(&sleep_period, NULL);
+
 }
