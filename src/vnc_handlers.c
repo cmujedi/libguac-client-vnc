@@ -38,7 +38,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <syslog.h>
-#include <iconv.h>
+#include <pthread.h>
 
 #include <cairo/cairo.h>
 
@@ -49,7 +49,6 @@
 #include <guacamole/client.h>
 
 #include "client.h"
-#include "convert.h"
 
 void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
@@ -127,12 +126,17 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
 
     /* Send cursor data*/
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_ARGB32, w, h, stride);
+    
+    pthread_mutex_lock(&(gc->send_lock));
+    
     guac_protocol_send_png(socket,
             GUAC_COMP_SRC, cursor_layer, 0, 0, surface);
-
+ 
     /* Update cursor */
     guac_protocol_send_cursor(socket, x, y, cursor_layer, 0, 0, w, h);
-
+    
+    pthread_mutex_unlock(&(gc->send_lock));
+    
     /* Free surface */
     cairo_surface_destroy(surface);
     free(buffer);
@@ -226,7 +230,12 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {
 
     /* For now, only use default layer */
     surface = cairo_image_surface_create_for_data(buffer, CAIRO_FORMAT_RGB24, w, h, stride);
+
+    pthread_mutex_lock(&(gc->send_lock));
+
     guac_protocol_send_png(socket, GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, x, y, surface);
+
+    pthread_mutex_unlock(&(gc->send_lock));
 
     /* Free surface */
     cairo_surface_destroy(surface);
@@ -239,10 +248,14 @@ void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, in
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
 
+    pthread_mutex_lock(&(gc->send_lock));
+
     /* For now, only use default layer */
     guac_protocol_send_copy(socket,
                             GUAC_DEFAULT_LAYER, src_x,  src_y, w, h,
             GUAC_COMP_OVER, GUAC_DEFAULT_LAYER, dest_x, dest_y);
+
+    pthread_mutex_unlock(&(gc->send_lock));
 
     ((vnc_guac_client_data*) gc->data)->copy_rect_used = 1;
 
@@ -296,9 +309,13 @@ rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client) {
     guac_client* gc = rfbClientGetClientData(rfb_client, __GUAC_CLIENT);
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) gc->data;
 
+    pthread_mutex_lock(&(gc->send_lock));
+
     /* Send new size */
     guac_protocol_send_size(gc->socket,
             GUAC_DEFAULT_LAYER, rfb_client->width, rfb_client->height);
+
+    pthread_mutex_unlock(&(gc->send_lock));
 
     /* Use original, wrapped proc */
     return guac_client_data->rfb_MallocFrameBuffer(rfb_client);
@@ -309,13 +326,11 @@ void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen) {
     guac_client* gc = rfbClientGetClientData(client, __GUAC_CLIENT);
     guac_socket* socket = gc->socket;
 
-    /* Convert ASCII character data to UTF-8 */
-    char* utf8_text = convert("ISO_8859-1", "UTF-8", text);
+    pthread_mutex_lock(&(gc->send_lock));
 
-    guac_protocol_send_clipboard(socket, utf8_text);
+    guac_protocol_send_clipboard(socket, text);
 
-    free(utf8_text);
-
+    pthread_mutex_unlock(&(gc->send_lock));
 }
 
 void guac_vnc_client_log_info(const char* format, ...) {
@@ -339,4 +354,3 @@ void guac_vnc_client_log_error(const char* format, ...) {
     va_end(args);
 
 }
-
