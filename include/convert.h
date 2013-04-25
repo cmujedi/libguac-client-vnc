@@ -15,7 +15,7 @@
  * The Original Code is libguac-client-vnc.
  *
  * The Initial Developer of the Original Code is
- * Michael Jumper.
+ * James Muehlner.
  * Portions created by the Initial Developer are Copyright (C) 2010
  * the Initial Developer. All Rights Reserved.
  *
@@ -35,20 +35,19 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __GUAC_VNC_VNC_HANDLERS_H
-#define __GUAC_VNC_VNC_HANDLERS_H
+#ifndef __GUAC_VNC_VNC_CONVERT_H
+#define __GUAC_VNC_VNC_CONVERT_H
 
-#include <rfb/rfbclient.h>
+#include <iconv.h>
 
-void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp);
-void guac_vnc_update(rfbClient* client, int x, int y, int w, int h);
-void guac_vnc_copyrect(rfbClient* client, int src_x, int src_y, int w, int h, int dest_x, int dest_y);
-char* guac_vnc_get_password(rfbClient* client);
-rfbBool guac_vnc_malloc_framebuffer(rfbClient* rfb_client);
-void guac_vnc_cut_text(rfbClient* client, const char* text, int textlen);
-void guac_vnc_client_log_info(const char* format, ...);
-void guac_vnc_client_log_error(const char* format, ...);
-void guac_vnc_set_pixel_format(rfbClient* client, int color_depth);
+/**
+ * Converts a string from one charset to another. Returns a newly allocated string.
+ * @param from_charset The string representing the character set to convert from.
+ * @param to_charset The string representing the character set to convert to.
+ * @return A newly allocated string that is the result of the conversion, or NULL
+ *         if an error has occured.
+ */
+char* convert (const char* from_charset, const char* to_charset, const char* input);
 
 #endif
 
