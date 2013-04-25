@@ -131,11 +131,11 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {
     
     guac_protocol_send_png(socket,
             GUAC_COMP_SRC, cursor_layer, 0, 0, surface);
- 
-    /* Update cursor */
-    guac_protocol_send_cursor(socket, x, y, cursor_layer, 0, 0, w, h);
     
     pthread_mutex_unlock(&(gc->send_lock));
+    
+    /* Update cursor */
+    guac_protocol_send_cursor(socket, x, y, cursor_layer, 0, 0, w, h);
     
     /* Free surface */
     cairo_surface_destroy(surface);
