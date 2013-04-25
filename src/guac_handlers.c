@@ -38,14 +38,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <iconv.h>
+#include <pthread.h>
 
 #include <rfb/rfbclient.h>
 
 #include <guacamole/client.h>
 
 #include "client.h"
-#include "convert.h"
+#include "pa_handlers.h"
 
 int vnc_guac_client_handle_messages(guac_client* client) {
 
@@ -94,12 +94,7 @@ int vnc_guac_client_clipboard_handler(guac_client* client, char* data) {
 
     rfbClient* rfb_client = ((vnc_guac_client_data*) client->data)->rfb_client;
 
-    /* Convert UTF-8 character data to ISO_8859-1 */
-    char* iso_8559_1_data = convert("UTF-8", "ISO_8859-1", data);
-
-    SendClientCutText(rfb_client, iso_8559_1_data, strlen(iso_8559_1_data));
-
-    free(iso_8559_1_data);
+    SendClientCutText(rfb_client, data, strlen(data));
 
     return 0;
 }
@@ -108,6 +103,20 @@ int vnc_guac_client_free_handler(guac_client* client) {
 
     vnc_guac_client_data* guac_client_data = (vnc_guac_client_data*) client->data;
     rfbClient* rfb_client = guac_client_data->rfb_client;
+
+    if (guac_client_data->audio_enabled) {
+    
+        /* Wait for audio read and send threads to join */
+        if (guac_client_data->audio_read_thread)
+            pthread_join(*(guac_client_data->audio_read_thread), NULL);
+        
+        if (guac_client_data->audio_send_thread)
+            pthread_join(*(guac_client_data->audio_send_thread), NULL);
+       
+        /* Free up buffer allocated for audio stream */
+        if(guac_client_data->audio_buffer)
+            guac_pa_buffer_free(guac_client_data->audio_buffer);
+    }
 
     /* Free encodings string, if used */
     if (guac_client_data->encodings != NULL)
@@ -133,4 +142,3 @@ int vnc_guac_client_free_handler(guac_client* client) {
 
     return 0;
 }
-
