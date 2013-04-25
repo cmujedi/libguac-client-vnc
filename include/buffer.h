@@ -12,12 +12,15 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is libguac-client-vnc.
+ * The Original Code is buffer.
  *
- * The Initial Developer of the Original Code is
- * Michael Jumper.
- * Portions created by the Initial Developer are Copyright (C) 2010
- * the Initial Developer. All Rights Reserved.
+ * The Initial Developers of the Original Code are
+ *   Craig Hokanson <craig.hokanson@sv.cmu.edu>
+ *   Sion Chaudhuri <sion.chaudhuri@sv.cmu.edu>
+ *   Gio Perez <gio.perez@sv.cmu.edu>
+ *
+ * Portions created by the Initial Developer are Copyright (C) 2013
+ * the Initial Developers. All Rights Reserved.
  *
  * Contributor(s):
  *
@@ -35,54 +38,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef __GUAC_VNC_CLIENT_H
-#define __GUAC_VNC_CLIENT_H
-
+#ifndef __GUAC_VNC_BUFFER_H
+#define __GUAC_VNC_BUFFER_H
+ 
+#include <pthread.h>
 #include <guacamole/client.h>
-#include <guacamole/audio.h>
-#include <rfb/rfbclient.h>
+#include "queue.h"
 
-#include "buffer.h"
+typedef struct {
+    queue data_queue;
+    pthread_mutex_t update_lock;
+    pthread_cond_t cond;
+} buffer;
 
-extern char* __GUAC_CLIENT;
+void buffer_init(buffer* buf, int size_of_data);
 
-typedef struct vnc_guac_client_data {
-    
-    rfbClient* rfb_client;
-    MallocFrameBufferProc rfb_MallocFrameBuffer;
+void buffer_free(buffer* buf);
 
-    int copy_rect_used;
-    char* password;
-    char* encodings;
-    int swap_red_blue;
-
-    guac_layer* cursor;
-    
-    /**
-     * Whether audio is enabled.
-     */
-    int audio_enabled;
-    
-    /**
-     * Audio output, if any.
-     */
-    audio_stream* audio;
-    
-    /**
-     * Audio buffer, if any.
-     */
-    buffer* audio_buffer;
-    
-    /**
-     * Handle to the audio read thread.
-     */
-    pthread_t* audio_read_thread;
-    
-    /**
-     * Handle to the audio send thread.
-     */
-    pthread_t* audio_send_thread;
-
-} vnc_guac_client_data;
+void buffer_insert(buffer* buf, void* data, int size_of_data);
+ 
+void buffer_remove(buffer* buf, void* data, int size_of_data, guac_client* client);
 
 #endif
