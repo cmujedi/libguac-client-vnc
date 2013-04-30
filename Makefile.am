@@ -62,3 +62,4 @@ noinst_HEADERS =         \
 libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0
 
 EXTRA_DIST = LICENSE
+
