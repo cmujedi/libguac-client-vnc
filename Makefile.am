@@ -41,10 +41,24 @@ AM_CFLAGS = -Werror -Wall -pedantic -Iinclude
 
 lib_LTLIBRARIES = libguac-client-vnc.la
 
-libguac_client_vnc_la_SOURCES = src/client.c src/vnc_handlers.c src/guac_handlers.c src/convert.c
-noinst_HEADERS = include/client.h include/vnc_handlers.h include/guac_handlers.h include/convert.h
+libguac_client_vnc_la_SOURCES = \
+  src/client.c       \
+  src/vnc_handlers.c     \
+  src/guac_handlers.c   \
+  src/pa_handlers.c     \
+  src/queue.c        \
+  src/buffer.c         \
+  src/convert.c
+  
+noinst_HEADERS =         \
+  include/client.h     \
+  include/vnc_handlers.h   \
+  include/guac_handlers.h  \
+  include/pa_handlers.h   \
+  include/queue.h        \
+  include/buffer.h          \
+  include/convert.h
 
 libguac_client_vnc_la_LDFLAGS = -version-info 0:0:0
 
 EXTRA_DIST = LICENSE
-
